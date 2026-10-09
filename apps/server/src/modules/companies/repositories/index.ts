@@ -54,21 +54,21 @@ export class CompaniesRepository {
 		return companySelectSchema.parse(company);
 	}
 
-	/** @description Check if an employee with the given CPF exists */
-	static async queryEmployeeByCpf(cpf: string) {
+	/** @description Check if an employee with the given DNI exists */
+	static async queryEmployeeByDni(dni: string) {
 		const [data] = await db
 			.select()
 			.from(employees)
-			.where(eq(employees.cpf, cpf));
+			.where(eq(employees.dni, dni));
 		return data;
 	}
 
-	/** @description Check if a company with the given CNPJ exists */
-	static async queryCompanyByCnpj(cnpj: string) {
+	/** @description Check if a company with the given CUIT exists */
+	static async queryCompanyByCuit(cuit: string) {
 		const [data] = await db
 			.select()
 			.from(companies)
-			.where(eq(companies.cnpj, cnpj));
+			.where(eq(companies.cuit, cuit));
 		return data;
 	}
 
@@ -87,7 +87,7 @@ export class CompaniesRepository {
 			.insert(companies)
 			.values({
 				name: data.name,
-				cnpj: data.cnpj,
+				cuit: data.cuit,
 				address: data.address || null,
 				subdomain: data.subdomain,
 			})
@@ -104,7 +104,7 @@ export class CompaniesRepository {
 
 		await db.insert(employees).values({
 			name: "Admin",
-			cpf: data.owner_cpf,
+			dni: data.owner_dni,
 			role: "admin" as const,
 			userId: adminId?.id as string,
 			companyId: orgId?.id as string,

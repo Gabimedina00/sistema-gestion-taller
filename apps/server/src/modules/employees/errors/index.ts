@@ -1,9 +1,9 @@
 import { defineErrors } from "../../../core/utils/errors";
 
 export const employeesErrors = defineErrors({
-	EMPLOYEE_CPF_CONFLICT: {
-		code: "cpf_conflict",
-		message: "Cpf is already registered.",
+	EMPLOYEE_DNI_CONFLICT: {
+		code: "dni_conflict",
+		message: "DNI is already registered.",
 		status: 409,
 	},
 	EMPLOYEE_EMAIL_ALREADY_USED: {

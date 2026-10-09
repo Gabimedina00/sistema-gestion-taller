@@ -9,17 +9,17 @@ import { Cached, InvalidateCache } from "../../../shared/infra/cache";
 /** @description Employees data access layer */
 export class EmployeesRepository {
 	/**
-	 * Get an employee by CPF
+	 * Get an employee by DNI
 	 *
-	 * @param cpf - The employee CPF
+	 * @param dni - The employee DNI
 	 * @returns The employee data or undefined
 	 */
-	@Cached({ ttl: 3600, key: "employees:cpf" })
-	static async getEmployeeByCpf(cpf: string) {
+	@Cached({ ttl: 3600, key: "employees:dni" })
+	static async getEmployeeByDni(dni: string) {
 		const [data] = await db
 			.select()
 			.from(employees)
-			.where(eq(employees.cpf, cpf));
+			.where(eq(employees.dni, dni));
 		return data;
 	}
 
@@ -47,7 +47,7 @@ export class EmployeesRepository {
 			.$returningId();
 
 		await db.insert(employees).values({
-			cpf: data.cpf,
+			dni: data.dni,
 			name: data.name,
 			phone: unmask.phone(data.phone),
 			role: data.role,

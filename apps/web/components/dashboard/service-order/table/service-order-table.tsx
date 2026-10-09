@@ -49,7 +49,7 @@ export function ServiceOrdersTable({ subdomain }: Props) {
 				row.orderNumber,
 				row.client.name,
 				row.client.phone,
-				row.client.cpf,
+				row.client.dni,
 				row.mark,
 				row.model,
 				row.category,

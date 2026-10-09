@@ -21,87 +21,72 @@ function isRepeatedDigits(value: string) {
 }
 
 /**
- * Validates a Brazilian CPF (Cadastro de Pessoas Físicas) document number.
+ * Validates an Argentine DNI (Documento Nacional de Identidad) number.
  *
- * The algorithm veriies the two check digits:
- * 1st check digit: multiply digits 1-9 by weights 10 -> 2, sum them, multiply by 10, take %11
- * 2nd check digit: multiply digits 1-10 by weights 11 -> 2, sum them, multiply by 10, take %11
- * If the remainder is 10, the check digit is 0.
+ * A DNI has no check digit, so only the shape is checked: 7 or 8 digits.
  */
-export function isValidCPF(cpf: string) {
-	const value = onlyDigits(cpf);
+export function isValidDNI(dni: string) {
+	const value = onlyDigits(dni);
 
-	if (value.length !== 11 || isRepeatedDigits(value)) {
-		return false;
-	}
-
-	const calcDigit = (base: string, factor: number) => {
-		let total = 0;
-		let currentFactor = factor;
-
-		for (const char of base) {
-			total += Number(char) * currentFactor--;
-		}
-
-		const rest = (total * 10) % 11;
-		return rest === 10 ? 0 : rest;
-	};
-
-	const digit1 = calcDigit(value.slice(0, 9), 10);
-	const digit2 = calcDigit(value.slice(0, 10), 11);
-
-	return digit1 === Number(value[9]) && digit2 === Number(value[10]);
+	return (value.length === 7 || value.length === 8) && !isRepeatedDigits(value);
 }
+
+const CUIT_PREFIXES = new Set([
+	"20",
+	"23",
+	"24",
+	"25",
+	"26",
+	"27",
+	"30",
+	"33",
+	"34",
+]);
+const CUIT_WEIGHTS = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
 
 /**
- * Validates a Brazilian CNPJ (Cadastro Nacional da Pessoa Jurídica) document number.
+ * Validates an Argentine CUIT/CUIL number (11 digits, e.g. 20-12345678-6).
  *
- * The algorithm verifies the two check digits using fixed weight arrays:
- * 1st check digit: multiply digits 1-12 by weights [5,4,3,2,9,8,7,6,5,4,3,2], sum, take %11
- * 2nd check digit: multiply digits 1-13 by weights [6,5,4,3,2,9,8,7,6,5,4,3,2], sum, take %11
- * If remainder < 2, check digit is 0; otherwise it's 11 - remainder.
+ * The last digit is a check digit: multiply the first 10 digits by the weights
+ * [5,4,3,2,7,6,5,4,3,2], sum them and take 11 - (sum % 11).
+ * A result of 11 means 0; a result of 10 is never a valid CUIT.
  */
-export function isValidCNPJ(cnpj: string) {
-	const value = onlyDigits(cnpj);
+export function isValidCUIT(cuit: string) {
+	const value = onlyDigits(cuit);
 
-	if (value.length !== 14 || isRepeatedDigits(value)) {
+	if (
+		value.length !== 11 ||
+		isRepeatedDigits(value) ||
+		!CUIT_PREFIXES.has(value.slice(0, 2))
+	) {
 		return false;
 	}
 
-	const calcDigit = (base: string, weights: number[]) => {
-		const total = base.split("").reduce((sum, char, index) => {
-			const weight = weights[index] ?? 0;
-			return sum + Number(char) * weight;
-		}, 0);
-
-		const rest = total % 11;
-		return rest < 2 ? 0 : 11 - rest;
-	};
-
-	const digit1 = calcDigit(
-		value.slice(0, 12),
-		[5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+	const total = CUIT_WEIGHTS.reduce(
+		(sum, weight, index) => sum + Number(value[index]) * weight,
+		0
 	);
-	const digit2 = calcDigit(
-		value.slice(0, 13),
-		[6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
-	);
+	const check = 11 - (total % 11);
 
-	return digit1 === Number(value[12]) && digit2 === Number(value[13]);
+	if (check === 10) {
+		return false;
+	}
+
+	return (check === 11 ? 0 : check) === Number(value[10]);
 }
 
-export function documentSchema(type: "cpf" | "cnpj") {
+export function documentSchema(type: "dni" | "cuit") {
 	return z.string().superRefine((value, ctx) => {
 		if (!shouldValidateDocuments()) {
 			return;
 		}
 
-		const valid = type === "cpf" ? isValidCPF(value) : isValidCNPJ(value);
+		const valid = type === "dni" ? isValidDNI(value) : isValidCUIT(value);
 
 		if (!valid) {
 			ctx.addIssue({
 				code: z.ZodIssueCode.custom,
-				message: `${type.toUpperCase()} inválido`,
+				message: `Invalid ${type.toUpperCase()}`,
 			});
 		}
 	});

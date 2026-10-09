@@ -1,5 +1,5 @@
 "use client";
-import { cpf, unmask } from "@fixr/constants/masks";
+import { dni, unmask } from "@fixr/constants/masks";
 import { defaultMessages, messages } from "@fixr/constants/messages";
 import { roleLabels } from "@fixr/constants/roles";
 import { createEmployeeSchema } from "@fixr/schemas/employees";
@@ -57,7 +57,7 @@ export function NewEmployeeForm({
 	const form = useForm<z.infer<typeof createEmployeeSchema>>({
 		resolver: zodResolver(createEmployeeSchema),
 		defaultValues: {
-			cpf: "",
+			dni: "",
 			email: "",
 			name: "",
 			password: "",
@@ -73,7 +73,7 @@ export function NewEmployeeForm({
 
 		const formatted: z.infer<typeof createEmployeeSchema> = {
 			...values,
-			cpf: unmask.cpf(values.cpf),
+			dni: unmask.dni(values.dni),
 		};
 
 		try {
@@ -107,7 +107,7 @@ export function NewEmployeeForm({
 		}
 	}
 
-	const cpfMask = useMaskito({ options: { mask: cpf } });
+	const dniMask = useMaskito({ options: { mask: dni } });
 	// const phoneMask = useMaskito({ options: { mask: phone } });
 
 	function generatePwd() {
@@ -172,19 +172,20 @@ export function NewEmployeeForm({
 				/>
 				<FormField
 					control={form.control}
-					name="cpf"
+					name="dni"
 					render={({ field }) => (
 						<FormItem>
 							<FormLabel>
 								<IdCard className="mr-1 inline-block size-3.5" />
-								CPF
+								DNI
 							</FormLabel>
 							<FormControl>
 								<Input
-									placeholder="123.456.789-00"
+									inputMode="numeric"
+									placeholder="30123456"
 									{...field}
-									onInput={(e) => form.setValue("cpf", e.currentTarget.value)}
-									ref={cpfMask}
+									onInput={(e) => form.setValue("dni", e.currentTarget.value)}
+									ref={dniMask}
 								/>
 							</FormControl>
 							<FormMessage />

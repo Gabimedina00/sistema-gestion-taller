@@ -134,13 +134,13 @@ Rules:
 					.object({
 						status: z.literal(409),
 						error: z.literal("Conflict"),
-						code: z.literal("cpf_conflict"),
-						message: z.literal("Cpf is already registered."),
+						code: z.literal("dni_conflict"),
+						message: z.literal("DNI is already registered."),
 						data: z.literal(null),
 					})
-					.describe("CPF is already registered."),
+					.describe("DNI is already registered."),
 			])
-			.describe("Email or CPF is already registered."),
+			.describe("Email or DNI is already registered."),
 	},
 	security: [{ JWT: [] }],
 };

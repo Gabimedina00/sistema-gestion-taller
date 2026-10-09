@@ -88,7 +88,10 @@ export const getServiceOrdersQuerySchema = getPaginatedDataSchema
 import { documentSchema } from "./documents";
 
 export const createOrderServiceSchema = z.object({
-	customerCPF: documentSchema("cpf").min(1, "O CPF é obrigatório"),
+	customerDocument: documentSchema("dni").min(
+		1,
+		"Customer ID (DNI) is required."
+	),
 	deviceIMEI: formattedIMEI.optional(),
 	description: z.string().min(1, "A descrição do problema é obrigatória"),
 	notes: z.string().optional(),

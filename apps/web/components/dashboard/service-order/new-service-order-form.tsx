@@ -1,6 +1,6 @@
 "use client";
 
-import { cpf, unmask } from "@fixr/constants/masks";
+import { dni, unmask } from "@fixr/constants/masks";
 import { getDevices } from "@fixr/mock";
 import { createOrderServiceSchema } from "@fixr/schemas/service-orders";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -66,7 +66,7 @@ export function NewServiceOrderForm({
 	const form = useForm<z.infer<typeof createOrderServiceSchema>>({
 		resolver: zodResolver(createOrderServiceSchema),
 		defaultValues: {
-			customerCPF: "",
+			customerDocument: "",
 			deviceIMEI: "",
 			description: "",
 			notes: "",
@@ -77,16 +77,16 @@ export function NewServiceOrderForm({
 		mode: "all",
 	});
 
-	const cpfMask = useMaskito({ options: { mask: cpf } });
+	const dniMask = useMaskito({ options: { mask: dni } });
 
-	const handleCustomerCreated = (cpf: string) => {
-		form.setValue("customerCPF", cpf);
+	const handleCustomerCreated = (document: string) => {
+		form.setValue("customerDocument", document);
 	};
 
 	const onSubmit = (values: z.infer<typeof createOrderServiceSchema>) => {
 		const formattedValues = {
 			...values,
-			customerCPF: unmask.cpf(values.customerCPF),
+			customerDocument: unmask.dni(values.customerDocument),
 		};
 
 		console.log("Ordem de serviço a ser criada:", formattedValues);
@@ -170,18 +170,19 @@ export function NewServiceOrderForm({
 					<div className="flex grow flex-col gap-4">
 						<FormField
 							control={form.control}
-							name="customerCPF"
+							name="customerDocument"
 							render={({ field }) => (
 								<FormItem className="grow">
-									<FormLabel>CPF do cliente</FormLabel>
+									<FormLabel>Customer DNI</FormLabel>
 									<FormControl>
 										<Input
-											placeholder="123.456.789-00"
+											inputMode="numeric"
+											placeholder="30123456"
 											{...field}
 											onInput={(e) =>
-												form.setValue("customerCPF", e.currentTarget.value)
+												form.setValue("customerDocument", e.currentTarget.value)
 											}
-											ref={cpfMask}
+											ref={dniMask}
 										/>
 									</FormControl>
 									<FormMessage />

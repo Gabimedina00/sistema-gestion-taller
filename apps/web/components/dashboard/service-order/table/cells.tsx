@@ -27,17 +27,17 @@ export function OrderNumberCell({
 export function ClientCell({
 	name,
 	phone,
-	cpf,
+	dni,
 }: {
 	name: string;
 	phone: string;
-	cpf: string;
+	dni: string;
 }) {
 	return (
 		<div className="flex flex-col">
 			<span className="font-medium">{name}</span>
 			<span className="text-muted-foreground text-xs">{phone}</span>
-			<span className="text-muted-foreground text-xs">{cpf}</span>
+			<span className="text-muted-foreground text-xs">{dni}</span>
 		</div>
 	);
 }

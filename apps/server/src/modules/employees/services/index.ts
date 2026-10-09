@@ -84,7 +84,7 @@ export class EmployeesService {
 				select: {
 					id: employeesTable.id,
 					name: employeesTable.name,
-					cpf: employeesTable.cpf,
+					dni: employeesTable.dni,
 					phone: employeesTable.phone,
 					role: employeesTable.role,
 					createdAt: employeesTable.createdAt,
@@ -118,7 +118,7 @@ export class EmployeesService {
 			{
 				id: string;
 				name: string;
-				cpf: string;
+				dni: string;
 				phone: string | null;
 				role: "admin" | "manager" | "technician" | "warehouse" | "financial";
 				createdAt: Date;
@@ -242,12 +242,12 @@ export class EmployeesService {
 		}
 
 		const existingEmailQuery = AuthRepository.queryUserByEmail(data.email);
-		const existingCpfQuery = EmployeesRepository.getEmployeeByCpf(data.cpf);
+		const existingDniQuery = EmployeesRepository.getEmployeeByDni(data.dni);
 		const companyQuery = CompaniesRepository.queryCompanyBySubdomain(subdomain);
 
-		const [existingEmail, existingCpf, company] = await Promise.all([
+		const [existingEmail, existingDni, company] = await Promise.all([
 			existingEmailQuery,
-			existingCpfQuery,
+			existingDniQuery,
 			companyQuery,
 		]);
 
@@ -255,8 +255,8 @@ export class EmployeesService {
 			throw new AppError("EMPLOYEE_EMAIL_ALREADY_USED");
 		}
 
-		if (existingCpf) {
-			throw new AppError("EMPLOYEE_CPF_CONFLICT");
+		if (existingDni) {
+			throw new AppError("EMPLOYEE_DNI_CONFLICT");
 		}
 
 		if (!company) {
