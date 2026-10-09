@@ -1,5 +1,6 @@
 import { permissions } from "@fixr/permissions";
 import {
+	createWatchBrandSchema,
 	getModelMakerParamsSchema,
 	getModelMakersQuerySchema,
 } from "@fixr/schemas/models";
@@ -33,6 +34,36 @@ export function makersRoutes(fastify: FastifyTypedInstance) {
 				sort,
 				response,
 			});
+		})
+	);
+
+	fastify.get(
+		"/watch-brands",
+		{
+			preHandler: [
+				authenticateEmployee,
+				requirePermission(permissions.devices.read),
+			],
+			schema: makersDocs.listWatchBrandsSchema,
+		},
+		withErrorHandler(async (_request, response) => {
+			await MakersController.listWatchBrands({ response });
+		})
+	);
+
+	fastify.post(
+		"/watch-brands",
+		{
+			preHandler: [
+				authenticateEmployee,
+				requirePermission(permissions.serviceOrders.create),
+			],
+			schema: makersDocs.createWatchBrandSchema,
+		},
+		withErrorHandler(async (request, response) => {
+			const { name } = createWatchBrandSchema.parse(request.body);
+
+			await MakersController.createWatchBrand({ name, response });
 		})
 	);
 

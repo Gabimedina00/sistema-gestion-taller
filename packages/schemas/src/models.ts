@@ -111,3 +111,18 @@ export const createModelImageBodySchema = z.object({
 	variant: z.string().optional(),
 	position: z.number().int().optional(),
 });
+
+/** @description A watch brand offered in the repair order form */
+export const watchBrandSchema = z.object({
+	id: z.string(),
+	name: z.string(),
+});
+
+/** @description Body for adding a watch brand that isn't in the list yet */
+export const createWatchBrandSchema = z.object({
+	name: z
+		.string({ error: "Brand name is required." })
+		.trim()
+		.min(1, { message: "Brand name is required." })
+		.max(100, { message: "Brand name is too long (max 100)." }),
+});

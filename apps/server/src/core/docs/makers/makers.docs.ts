@@ -1,7 +1,9 @@
 import { modelMakerSelectSchema } from "@fixr/db/schema";
 import {
+	createWatchBrandSchema as createWatchBrandBodySchema,
 	getModelMakerParamsSchema,
 	getModelMakersQuerySchema,
+	watchBrandSchema,
 } from "@fixr/schemas/models";
 import { paginatedDataSchema } from "@fixr/schemas/utils";
 import type { FastifySchema } from "fastify";
@@ -72,8 +74,58 @@ const getMakerBySlugSchema: FastifySchema = {
 	security: [{ JWT: [] }],
 };
 
+const listWatchBrandsSchema: FastifySchema = {
+	tags: ["Devices"],
+	summary: "List watch brands",
+	description: "All watch brands, sorted by name, for the repair order form.",
+	response: {
+		200: zodResponseSchema({
+			status: 200,
+			error: null,
+			code: "list_watch_brands_success",
+			message: "Watch brands retrieved successfully.",
+			data: z.array(watchBrandSchema),
+		}).describe("Watch brands retrieved."),
+	},
+	security: [{ JWT: [] }],
+};
+
+const createWatchBrandSchema: FastifySchema = {
+	tags: ["Devices"],
+	summary: "Add a watch brand",
+	description:
+		"Adds a watch brand that isn't in the list yet. If one with the same name exists (ignoring case and accents), it is returned with status 200 instead.",
+	body: createWatchBrandBodySchema,
+	response: {
+		200: zodResponseSchema({
+			status: 200,
+			error: null,
+			code: "watch_brand_already_exists",
+			message: "This watch brand was already registered.",
+			data: watchBrandSchema,
+		}).describe("The brand already existed."),
+		201: zodResponseSchema({
+			status: 201,
+			error: null,
+			code: "create_watch_brand_success",
+			message: "Watch brand added successfully.",
+			data: watchBrandSchema,
+		}).describe("Brand added."),
+		403: zodResponseSchema({
+			status: 403,
+			error: "Forbidden",
+			code: "missing_required_permissions",
+			message: "You dont have the required permissions to perform this action",
+			data: null,
+		}).describe("The employee's role can't create repair orders."),
+	},
+	security: [{ JWT: [] }],
+};
+
 /** @description OpenAPI schemas for the makers module */
 export const makersDocs = {
 	listMakersSchema,
 	getMakerBySlugSchema,
+	listWatchBrandsSchema,
+	createWatchBrandSchema,
 };

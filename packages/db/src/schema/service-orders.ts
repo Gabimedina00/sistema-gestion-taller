@@ -81,9 +81,15 @@ export const serviceOrders = mysqlTable("service_orders", {
 		.$onUpdate(() => new Date()),
 });
 
+/** @description MariaDB stores JSON as text, so the driver can hand back a string */
+const jsonStringArray = z.preprocess(
+	(value) => (typeof value === "string" ? JSON.parse(value) : value),
+	z.array(z.string()).nullable()
+);
+
 export const serviceOrderSelectSchema = createSelectSchema(serviceOrders, {
-	requestedServices: z.array(z.string()).nullable(),
-	itemsReceived: z.array(z.string()).nullable(),
+	requestedServices: jsonStringArray,
+	itemsReceived: jsonStringArray,
 	estimatedDeliveryDate: z.coerce.date().nullable(),
 	createdAt: z.coerce.date(),
 	updatedAt: z.coerce.date(),

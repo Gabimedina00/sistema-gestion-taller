@@ -159,10 +159,7 @@ export const createOrderServiceSchema = watchDetailsSchema.extend({
 		1,
 		"Customer ID (DNI) is required."
 	),
-	brand: z
-		.string()
-		.min(1, "Brand is required.")
-		.max(100, "Brand is too long (max 100)."),
+	brandId: z.string().min(1, "Pick the brand, or add it if it's not listed."),
 	model: z
 		.string()
 		.min(1, "Model is required.")
@@ -170,8 +167,5 @@ export const createOrderServiceSchema = watchDetailsSchema.extend({
 	description: z.string().min(1, "Describe the problem the customer reports."),
 	notes: z.string().optional(),
 	assigned_to: z.string().optional(),
-	images: z
-		.array(z.instanceof(File))
-		.min(1, "Add at least one photo of the watch as received.")
-		.max(15, "Add up to 15 photos."),
+	images: z.array(z.instanceof(File)).max(15, "Add up to 15 photos."),
 });

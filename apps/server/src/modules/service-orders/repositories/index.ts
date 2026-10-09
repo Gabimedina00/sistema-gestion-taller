@@ -207,27 +207,13 @@ export class ServiceOrdersRepository {
 
 			if (data.photos.length > 0) {
 				const uploadIds = data.photos.map((p) => p.uploadId);
-				const uploadRecords = await tx
-					.select()
-					.from(uploads)
-					.where(inArray(uploads.id, uploadIds));
-
-				const uploadMap = new Map(uploadRecords.map((u) => [u.id, u]));
-
 				await tx.insert(serviceOrderImages).values(
-					data.photos.map((photo) => {
-						const upload = uploadMap.get(photo.uploadId)!;
-						return {
-							serviceOrderId: serviceOrderId.id,
-							employeeId,
-							uploadId: photo.uploadId,
-							imageUrl: upload.url,
-							fileName: upload.fileName,
-							sizeInBytes: upload.sizeInBytes,
-							contentType: upload.contentType,
-							description: photo.description ?? null,
-						};
-					})
+					data.photos.map((photo) => ({
+						serviceOrderId: serviceOrderId.id,
+						employeeId,
+						uploadId: photo.uploadId,
+						description: photo.description ?? null,
+					}))
 				);
 
 				await tx

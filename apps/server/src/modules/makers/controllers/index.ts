@@ -38,4 +38,20 @@ export class MakersController {
 	}) {
 		return MakersService.getMakerBySlug({ slug, response });
 	}
+
+	/** @description List watch brands */
+	static listWatchBrands({ response }: { response: FastifyReply }) {
+		return MakersService.listWatchBrands({ response });
+	}
+
+	/** @description Add a watch brand */
+	static createWatchBrand({
+		name,
+		response,
+	}: {
+		name: string;
+		response: FastifyReply;
+	}) {
+		return MakersService.createWatchBrand({ name, response });
+	}
 }
