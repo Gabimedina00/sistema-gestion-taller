@@ -31,7 +31,16 @@ Supports three purposes controlled by the path parameter:
 			message: "Upload URL generated successfully.",
 			code: "create_avatar_presign_success",
 			data: uploadPresignResponseSchema,
-		}).describe("Presigned upload URL generated."),
+		})
+			.extend({
+				// One code per purpose: avatar, service-orders, models
+				code: z.enum([
+					"create_avatar_presign_success",
+					"create_upload_presign_success",
+					"create_model_image_presign_success",
+				]),
+			})
+			.describe("Presigned upload URL generated."),
 		403: zodResponseSchema({
 			status: 403,
 			error: "Forbidden",

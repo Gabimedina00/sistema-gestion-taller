@@ -131,4 +131,57 @@ export class MakersService {
 			})
 		);
 	}
+
+	/** @description List the watch brands offered in the repair order form */
+	static async listWatchBrands({ response }: { response: FastifyReply }) {
+		const brands = await MakersRepository.queryWatchBrands();
+
+		return response.status(200).send(
+			apiResponse({
+				status: 200,
+				error: null,
+				code: "list_watch_brands_success",
+				message: "Watch brands retrieved successfully.",
+				data: brands,
+			})
+		);
+	}
+
+	/**
+	 * Add a watch brand. If one with the same name already exists (ignoring
+	 * case and accents) it is returned instead of creating a duplicate.
+	 */
+	static async createWatchBrand({
+		name,
+		response,
+	}: {
+		name: string;
+		response: FastifyReply;
+	}) {
+		const existing = await MakersRepository.queryWatchBrandByName(name);
+
+		if (existing) {
+			return response.status(200).send(
+				apiResponse({
+					status: 200,
+					error: null,
+					code: "watch_brand_already_exists",
+					message: "This watch brand was already registered.",
+					data: existing,
+				})
+			);
+		}
+
+		const brand = await MakersRepository.createWatchBrand(name);
+
+		return response.status(201).send(
+			apiResponse({
+				status: 201,
+				error: null,
+				code: "create_watch_brand_success",
+				message: "Watch brand added successfully.",
+				data: brand,
+			})
+		);
+	}
 }

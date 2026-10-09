@@ -32,6 +32,7 @@ import { apiResponse } from "./core/lib/response";
 import { accountRoutes } from "./modules/account/routes";
 import { authRoutes } from "./modules/auth/routes";
 import { categoriesRoutes } from "./modules/categories/routes";
+import { clientsRoutes } from "./modules/clients/routes";
 import { companiesRoutes } from "./modules/companies/routes";
 import { credentialsRoutes } from "./modules/credentials/routes";
 import { employeesRoutes } from "./modules/employees/routes";
@@ -157,6 +158,10 @@ async function registerPlugins() {
 					description: "Manage company employees.",
 				},
 				{
+					name: "Customers",
+					description: "Find and add the shop's customers.",
+				},
+				{
 					name: "Service Orders",
 					description: "Manage company service orders.",
 				},
@@ -235,6 +240,10 @@ async function registerPlugins() {
 
 	await server.register(employeesRoutes, {
 		prefix: "/companies/:subdomain/employees",
+	});
+
+	await server.register(clientsRoutes, {
+		prefix: "/companies/:subdomain/clients",
 	});
 
 	await server.register(serviceOrdersRoutes, {

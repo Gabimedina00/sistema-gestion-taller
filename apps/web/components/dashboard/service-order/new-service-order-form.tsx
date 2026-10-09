@@ -1,7 +1,7 @@
 "use client";
 
+import { dni as dniMaskPattern, unmask } from "@fixr/constants/masks";
 import {
-	COMMON_WATCH_BRANDS,
 	DEFAULT_WATCH_WARRANTY_DAYS,
 	WATCH_ITEMS_RECEIVED,
 	WATCH_MOVEMENT_TYPES,
@@ -9,9 +9,12 @@ import {
 } from "@fixr/constants/watches";
 import { createOrderServiceSchema } from "@fixr/schemas/service-orders";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery } from "@tanstack/react-query";
-import { Check, ImagePlus, Trash2, UserPlus } from "lucide-react";
-import type { ComponentPropsWithoutRef } from "react";
+import { useMaskito } from "@maskito/react";
+import { toast } from "@pheralb/toast";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Check, ImagePlus, Loader2, Trash2, UserPlus } from "lucide-react";
+import { useParams } from "next/navigation";
+import { type ComponentPropsWithoutRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -41,13 +44,32 @@ import {
 	SheetTrigger,
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
+import { type Client, findClientByDni } from "@/lib/services/clients";
+import {
+	createServiceOrder,
+	getWatchCategory,
+	uploadServiceOrderPhoto,
+} from "@/lib/services/service-orders";
 import { cn } from "@/lib/utils";
 import { NewClientForm } from "../clients/new-client-form";
+import { WatchBrandField } from "./watch-brand-field";
 
 type FormInput = z.input<typeof createOrderServiceSchema>;
 type FormOutput = z.output<typeof createOrderServiceSchema>;
 
-const BRANDS_DATALIST_ID = "watch-brands";
+const DNI_REGEX = /^\d{7,8}$/;
+
+const clientByDniQueryKey = (subdomain: string, dni: string) => [
+	"clients",
+	subdomain,
+	"dni",
+	dni,
+];
+
+/** @description YYYY-MM-DD, the format the API expects for dates without time */
+function toDateOnly(date: Date) {
+	return date.toISOString().slice(0, 10);
+}
 
 function fileToDataUrl(file: File): Promise<string> {
 	return new Promise((resolve, reject) => {
@@ -99,15 +121,80 @@ function ToggleChips<T extends string>({
 	);
 }
 
+/** @description Shows who the typed DNI belongs to, so the counter knows if the customer is new */
+function CustomerLookup({
+	searched,
+	loading,
+	customer,
+	error,
+}: {
+	searched: boolean;
+	loading: boolean;
+	customer: Client | null | undefined;
+	error: string | undefined;
+}) {
+	if (!searched) {
+		return null;
+	}
+	if (loading) {
+		return <FormDescription>Looking up the customer...</FormDescription>;
+	}
+	if (error) {
+		return <FormDescription>{error}</FormDescription>;
+	}
+	if (!customer) {
+		return (
+			<FormDescription>
+				No customer with this DNI yet. Add them with "New customer".
+			</FormDescription>
+		);
+	}
+	return (
+		<FormDescription className="text-foreground">
+			<Check className="inline-block size-3.5" /> {customer.name}
+			{customer.phone ? ` · ${customer.phone}` : ""}
+		</FormDescription>
+	);
+}
+
+/** @description Maps the intake form to the API fields, sending empty text as null */
+function toOrderFields(values: FormOutput) {
+	return {
+		deviceBrandId: values.brandId,
+		deviceModel: values.model,
+		reportedDefect: values.description,
+		observations: values.notes || null,
+		referenceNumber: values.referenceNumber || null,
+		serialNumber: values.serialNumber || null,
+		movementType: values.movementType ?? null,
+		caliber: values.caliber || null,
+		requestedServices: values.requestedServices,
+		itemsReceived: values.itemsReceived,
+		intakeCondition: values.intakeCondition || null,
+		estimatedCost: values.estimatedCost ?? null,
+		estimatedDeliveryDate: values.estimatedDeliveryDate
+			? toDateOnly(values.estimatedDeliveryDate)
+			: null,
+		warrantyDays: values.warrantyDays ?? null,
+	};
+}
+
 export function NewServiceOrderForm({
 	className,
 	...props
 }: ComponentPropsWithoutRef<"form">) {
+	const { subdomain } = useParams<{ subdomain: string }>();
+	const queryClient = useQueryClient();
+	const [customerSheetOpen, setCustomerSheetOpen] = useState(false);
+	// What's happening while saving, shown on the submit button
+	const [progress, setProgress] = useState<string | null>(null);
+	const dniMask = useMaskito({ options: { mask: dniMaskPattern } });
+
 	const form = useForm<FormInput, unknown, FormOutput>({
 		resolver: zodResolver(createOrderServiceSchema),
 		defaultValues: {
 			customerDocument: "",
-			brand: "",
+			brandId: "",
 			model: "",
 			referenceNumber: "",
 			serialNumber: "",
@@ -126,13 +213,100 @@ export function NewServiceOrderForm({
 		mode: "all",
 	});
 
-	const handleCustomerCreated = (document: string) => {
-		form.setValue("customerDocument", document);
+	const customerDni = unmask.dni(form.watch("customerDocument") ?? "");
+
+	const customer = useQuery({
+		queryKey: clientByDniQueryKey(subdomain, customerDni),
+		enabled: DNI_REGEX.test(customerDni),
+		queryFn: async () => {
+			const result = await findClientByDni(subdomain, customerDni);
+			if (result.error !== null) {
+				throw new Error(result.error);
+			}
+			return result.data;
+		},
+	});
+
+	const handleCustomerCreated = (client: Client) => {
+		queryClient.setQueryData(
+			clientByDniQueryKey(subdomain, client.dni),
+			client
+		);
+		form.setValue("customerDocument", client.dni, { shouldValidate: true });
+		setCustomerSheetOpen(false);
 	};
 
-	const onSubmit = (values: FormOutput) => {
-		// TODO: send to the API once clients and brands are loaded from the server
-		console.log("Watch repair order to create:", values);
+	const saveOrder = async (values: FormOutput) => {
+		const dni = unmask.dni(values.customerDocument);
+
+		setProgress("Checking the customer...");
+		const client = await findClientByDni(subdomain, dni);
+		if (client.error !== null) {
+			toast.error({
+				text: "Couldn't check the customer",
+				description: client.error,
+			});
+			return;
+		}
+		if (!client.data) {
+			form.setError("customerDocument", {
+				message: 'No customer with this DNI. Add them with "New customer".',
+			});
+			return;
+		}
+
+		const category = await getWatchCategory(subdomain);
+		if (category.error !== null) {
+			toast.error({
+				text: "Couldn't save the order",
+				description: category.error,
+			});
+			return;
+		}
+
+		const photos: { uploadId: string }[] = [];
+		for (const [index, file] of values.images.entries()) {
+			setProgress(`Uploading photo ${index + 1} of ${values.images.length}...`);
+			const upload = await uploadServiceOrderPhoto(file);
+			if (upload.error !== null) {
+				toast.error({
+					text: `Couldn't upload ${file.name}`,
+					description: upload.error,
+				});
+				return;
+			}
+			photos.push({ uploadId: upload.data });
+		}
+
+		setProgress("Saving the order...");
+		const order = await createServiceOrder(subdomain, {
+			clientId: client.data.id,
+			deviceCategoryId: category.data.id,
+			...toOrderFields(values),
+			photos,
+		});
+		if (order.error !== null) {
+			toast.error({
+				text: "Couldn't save the order",
+				description: order.error,
+			});
+			return;
+		}
+
+		toast.success({
+			text: "Repair order saved",
+			description: `${client.data.name}'s watch is now in the list.`,
+		});
+		form.reset();
+		queryClient.invalidateQueries({ queryKey: ["service-orders"] });
+	};
+
+	const onSubmit = async (values: FormOutput) => {
+		try {
+			await saveOrder(values);
+		} finally {
+			setProgress(null);
+		}
 	};
 
 	const selectedImages = form.watch("images") ?? [];
@@ -172,14 +346,24 @@ export function NewServiceOrderForm({
 											inputMode="numeric"
 											placeholder="30123456"
 											{...field}
+											onInput={(e) =>
+												form.setValue("customerDocument", e.currentTarget.value)
+											}
+											ref={dniMask}
 										/>
 									</FormControl>
+									<CustomerLookup
+										customer={customer.data}
+										error={customer.error?.message}
+										loading={customer.isFetching}
+										searched={DNI_REGEX.test(customerDni)}
+									/>
 									<FormMessage />
 								</FormItem>
 							)}
 						/>
 
-						<Sheet>
+						<Sheet onOpenChange={setCustomerSheetOpen} open={customerSheetOpen}>
 							<SheetTrigger asChild className="mt-5.5">
 								<Button className="shrink-0" type="button">
 									New customer <UserPlus className="size-4" />
@@ -206,22 +390,15 @@ export function NewServiceOrderForm({
 					<div className="grid gap-4 sm:grid-cols-2">
 						<FormField
 							control={form.control}
-							name="brand"
+							name="brandId"
 							render={({ field }) => (
 								<FormItem>
 									<FormLabel>Brand</FormLabel>
-									<FormControl>
-										<Input
-											list={BRANDS_DATALIST_ID}
-											placeholder="Casio, Seiko, Citizen..."
-											{...field}
-										/>
-									</FormControl>
-									<datalist id={BRANDS_DATALIST_ID}>
-										{COMMON_WATCH_BRANDS.map((brand) => (
-											<option key={brand} value={brand} />
-										))}
-									</datalist>
+									<WatchBrandField
+										onChange={field.onChange}
+										subdomain={subdomain}
+										value={field.value}
+									/>
 									<FormMessage />
 								</FormItem>
 							)}
@@ -583,8 +760,14 @@ export function NewServiceOrderForm({
 				/>
 
 				<div className="pt-2">
-					<Button className="w-full" type="submit">
-						Save repair order
+					<Button className="w-full" disabled={progress !== null} type="submit">
+						{progress === null ? (
+							"Save repair order"
+						) : (
+							<>
+								<Loader2 className="size-4 animate-spin" /> {progress}
+							</>
+						)}
 					</Button>
 				</div>
 			</form>

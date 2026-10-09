@@ -12,9 +12,9 @@ import {
 	Mail,
 	MapPin,
 	PhoneIcon,
-	Smartphone,
 	User,
 } from "lucide-react";
+import { useParams } from "next/navigation";
 import { type ComponentPropsWithoutRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
@@ -28,6 +28,7 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { type Client, createClient } from "@/lib/services/clients";
 import { cn } from "@/lib/utils";
 
 export function NewClientForm({
@@ -36,9 +37,10 @@ export function NewClientForm({
 	className,
 	...props
 }: {
-	onCustomerCreated: (dni: string) => void;
+	onCustomerCreated: (client: Client) => void;
 	cols?: number;
 } & ComponentPropsWithoutRef<"form">) {
+	const { subdomain } = useParams<{ subdomain: string }>();
 	const [loading, setLoading] = useState(false);
 
 	const form = useForm<z.infer<typeof createClientSchema>>({
@@ -48,7 +50,6 @@ export function NewClientForm({
 			email: "",
 			dni: "",
 			phone: "",
-			alternativePhone: "",
 			address: "",
 			province: "Corrientes",
 			city: "",
@@ -58,33 +59,33 @@ export function NewClientForm({
 
 	const dniMask = useMaskito({ options: { mask: dni } });
 	const phoneMask = useMaskito({ options: { mask: phone } });
-	const altPhoneMask = useMaskito({ options: { mask: phone } });
 
-	function onSubmit(values: z.infer<typeof createClientSchema>) {
+	async function onSubmit(values: z.infer<typeof createClientSchema>) {
 		setLoading(true);
 
-		const formattedData = {
+		const result = await createClient(subdomain, {
 			...values,
 			dni: unmask.dni(values.dni),
-			phone: unmask.phone(values.phone),
-			alternativePhone: values.alternativePhone
-				? unmask.phone(values.alternativePhone)
-				: null,
-		};
+			phone: unmask.phone(values.phone) ?? "",
+			email: values.email || null,
+			address: values.address || null,
+			city: values.city || null,
+			province: values.province || null,
+		});
 
-		try {
-			toast.success({
-				text: "Cliente cadastrado com sucesso!",
-			});
+		setLoading(false);
 
-			onCustomerCreated(formattedData.dni);
-		} catch {
+		if (result.error !== null) {
 			toast.error({
-				text: "Erro ao cadastrar cliente",
+				text: "Couldn't add the customer",
+				description: result.error,
 			});
-		} finally {
-			setLoading(false);
+			return;
 		}
+
+		toast.success({ text: `${result.data.name} was added.` });
+		form.reset();
+		onCustomerCreated(result.data);
 	}
 
 	return (
@@ -106,10 +107,10 @@ export function NewClientForm({
 						render={({ field }) => (
 							<FormItem>
 								<FormLabel>
-									<User className="inline-block size-3.5" /> Nome
+									<User className="inline-block size-3.5" /> Name
 								</FormLabel>
 								<FormControl>
-									<Input placeholder="João da Silva" {...field} />
+									<Input placeholder="Juan Pérez" {...field} />
 								</FormControl>
 								<FormMessage />
 							</FormItem>
@@ -124,7 +125,11 @@ export function NewClientForm({
 									<Mail className="inline-block size-3.5" /> Email
 								</FormLabel>
 								<FormControl>
-									<Input placeholder="joao.silva@email.com" {...field} />
+									<Input
+										placeholder="juan.perez@gmail.com"
+										{...field}
+										value={field.value ?? ""}
+									/>
 								</FormControl>
 								<FormMessage />
 							</FormItem>
@@ -147,29 +152,6 @@ export function NewClientForm({
 											form.setValue("phone", e.currentTarget.value)
 										}
 										ref={phoneMask}
-									/>
-								</FormControl>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-					<FormField
-						control={form.control}
-						name="alternativePhone"
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>
-									<Smartphone className="inline-block size-3.5" /> Other phone
-								</FormLabel>
-								<FormControl>
-									<Input
-										inputMode="tel"
-										placeholder="3794123456"
-										{...field}
-										onInput={(e) =>
-											form.setValue("alternativePhone", e.currentTarget.value)
-										}
-										ref={altPhoneMask}
 									/>
 								</FormControl>
 								<FormMessage />
@@ -203,10 +185,14 @@ export function NewClientForm({
 						render={({ field }) => (
 							<FormItem className="col-span-full">
 								<FormLabel>
-									<MapPin className="inline-block size-3.5" /> Endereço
+									<MapPin className="inline-block size-3.5" /> Address
 								</FormLabel>
 								<FormControl>
-									<Input placeholder="Rua, Av..." {...field} />
+									<Input
+										placeholder="Street and number"
+										{...field}
+										value={field.value ?? ""}
+									/>
 								</FormControl>
 								<FormMessage />
 							</FormItem>
@@ -221,7 +207,11 @@ export function NewClientForm({
 									<Building className="inline-block size-3.5" /> Province
 								</FormLabel>
 								<FormControl>
-									<Input placeholder="Corrientes" {...field} />
+									<Input
+										placeholder="Corrientes"
+										{...field}
+										value={field.value ?? ""}
+									/>
 								</FormControl>
 								<FormMessage />
 							</FormItem>
@@ -233,10 +223,14 @@ export function NewClientForm({
 						render={({ field }) => (
 							<FormItem>
 								<FormLabel>
-									<Building className="inline-block size-3.5" /> Cidade
+									<Building className="inline-block size-3.5" /> City
 								</FormLabel>
 								<FormControl>
-									<Input placeholder="Cidade" {...field} />
+									<Input
+										placeholder="Corrientes"
+										{...field}
+										value={field.value ?? ""}
+									/>
 								</FormControl>
 								<FormMessage />
 							</FormItem>
@@ -244,7 +238,7 @@ export function NewClientForm({
 					/>
 				</div>
 				<Button className="mt-4 w-full" disabled={loading} type="submit">
-					Finalizar cadastro{" "}
+					Add customer{" "}
 					{loading ? <Loader2 className="animate-spin" /> : <User />}
 				</Button>
 			</form>

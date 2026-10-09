@@ -11,10 +11,13 @@ export const clients = mysqlTable("clients", {
 	name: varchar("name", { length: 100 }).notNull(),
 	dni: varchar("dni", { length: 11 }).unique().notNull(),
 	phone: varchar("phone", { length: 11 }),
+	email: varchar("email", { length: 255 }),
+	address: varchar("address", { length: 255 }),
+	city: varchar("city", { length: 100 }),
+	province: varchar("province", { length: 100 }),
 	createdAt: timestamp("created_at").defaultNow().notNull(),
-	userId: varchar("user_id", { length: 25 })
-		.references(() => users.id) // Cannot cascade here because it would break business logic
-		.notNull(),
+	/** Only set when the customer has a login. Walk-in customers don't. */
+	userId: varchar("user_id", { length: 25 }).references(() => users.id), // Cannot cascade here because it would break business logic
 });
 
 /**

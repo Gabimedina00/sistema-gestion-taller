@@ -51,24 +51,42 @@ export const WATCH_ITEM_RECEIVED_IDS = Object.keys(WATCH_ITEMS_RECEIVED) as [
 	...WatchItemReceived[],
 ];
 
-/** @description Common brands offered as suggestions in the intake form. */
+/**
+ * @description Brands loaded with the first install (migration `seed_watch_brands`).
+ * The shop adds any other brand from the intake form.
+ */
 export const COMMON_WATCH_BRANDS = [
+	"Amazfit",
+	"Apple",
 	"Casio",
 	"Citizen",
 	"Festina",
 	"Fossil",
+	"Garmin",
 	"Guess",
 	"Hamilton",
+	"Huawei",
+	"John L. Cook",
+	"Knock Out",
 	"Mido",
+	"Mistral",
+	"Montreal",
 	"Omega",
 	"Orient",
 	"Q&Q",
 	"Rolex",
+	"Samsung",
 	"Seiko",
 	"Swatch",
 	"Tag Heuer",
+	"Timex",
 	"Tissot",
+	"Tressa",
+	"Xiaomi",
 ] as const;
+
+/** @description Device category every watch repair order goes under (seeded with the brands). */
+export const WATCH_CATEGORY_SLUG = "watches";
 
 /** @description Default warranty, in days, given on a repair. */
 export const DEFAULT_WATCH_WARRANTY_DAYS = 90;
