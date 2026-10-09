@@ -34,7 +34,6 @@
     "nodemailer": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "resend": "^4.5.1",
     "typescript": "catalog:",
     "zod": "catalog:"
   },
