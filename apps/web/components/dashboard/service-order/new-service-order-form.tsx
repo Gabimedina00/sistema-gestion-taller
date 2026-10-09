@@ -1,28 +1,24 @@
 "use client";
 
-import { cpf, unmask } from "@fixr/constants/masks";
-import { getDevices } from "@fixr/mock";
+import {
+	COMMON_WATCH_BRANDS,
+	DEFAULT_WATCH_WARRANTY_DAYS,
+	WATCH_ITEMS_RECEIVED,
+	WATCH_MOVEMENT_TYPES,
+	WATCH_SERVICES,
+} from "@fixr/constants/watches";
 import { createOrderServiceSchema } from "@fixr/schemas/service-orders";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMaskito } from "@maskito/react";
 import { useQuery } from "@tanstack/react-query";
-import { ImagePlus, Trash2, UserPlus } from "lucide-react";
-import { type ComponentPropsWithoutRef, useMemo, useState } from "react";
+import { Check, ImagePlus, Trash2, UserPlus } from "lucide-react";
+import type { ComponentPropsWithoutRef } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-
-interface DeviceOption {
-	id: string;
-	marca: string;
-	categoria: string;
-	modelo: string;
-}
-
 import {
 	Form,
 	FormControl,
+	FormDescription,
 	FormField,
 	FormItem,
 	FormLabel,
@@ -44,14 +40,20 @@ import {
 	SheetTitle,
 	SheetTrigger,
 } from "@/components/ui/sheet";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { NewClientForm } from "../clients/new-client-form";
+
+type FormInput = z.input<typeof createOrderServiceSchema>;
+type FormOutput = z.output<typeof createOrderServiceSchema>;
+
+const BRANDS_DATALIST_ID = "watch-brands";
 
 function fileToDataUrl(file: File): Promise<string> {
 	return new Promise((resolve, reject) => {
 		const reader = new FileReader();
 		reader.onload = () => resolve(String(reader.result));
-		reader.onerror = () => reject(new Error("Erro ao ler imagem"));
+		reader.onerror = () => reject(new Error("Could not read image"));
 		reader.readAsDataURL(file);
 	});
 }
@@ -59,89 +61,79 @@ function getFilePreviewKey(file: File): string {
 	return `${file.name}-${file.size}-${file.lastModified}`;
 }
 
+function toggleValue<T extends string>(values: T[], value: T): T[] {
+	return values.includes(value)
+		? values.filter((current) => current !== value)
+		: [...values, value];
+}
+
+/** @description Pill-style multi select, easier to tap on the shop counter than checkboxes */
+function ToggleChips<T extends string>({
+	options,
+	value,
+	onChange,
+}: {
+	options: Record<T, { id: T; label: string }>;
+	value: T[];
+	onChange: (value: T[]) => void;
+}) {
+	return (
+		<div className="flex flex-wrap gap-2">
+			{(Object.values(options) as { id: T; label: string }[]).map((option) => {
+				const selected = value.includes(option.id);
+				return (
+					<Button
+						aria-pressed={selected}
+						key={option.id}
+						onClick={() => onChange(toggleValue(value, option.id))}
+						size="sm"
+						type="button"
+						variant={selected ? "default" : "outline"}
+					>
+						{selected && <Check className="size-3.5" />}
+						{option.label}
+					</Button>
+				);
+			})}
+		</div>
+	);
+}
+
 export function NewServiceOrderForm({
 	className,
 	...props
 }: ComponentPropsWithoutRef<"form">) {
-	const form = useForm<z.infer<typeof createOrderServiceSchema>>({
+	const form = useForm<FormInput, unknown, FormOutput>({
 		resolver: zodResolver(createOrderServiceSchema),
 		defaultValues: {
-			customerCPF: "",
-			deviceIMEI: "",
+			customerDocument: "",
+			brand: "",
+			model: "",
+			referenceNumber: "",
+			serialNumber: "",
+			movementType: null,
+			caliber: "",
+			requestedServices: [],
+			itemsReceived: [],
+			intakeCondition: "",
 			description: "",
+			estimatedCost: null,
+			estimatedDeliveryDate: null,
+			warrantyDays: DEFAULT_WATCH_WARRANTY_DAYS,
 			notes: "",
-			deviceId: "",
-			assigned_to: "",
 			images: [],
 		},
 		mode: "all",
 	});
 
-	const cpfMask = useMaskito({ options: { mask: cpf } });
-
-	const handleCustomerCreated = (cpf: string) => {
-		form.setValue("customerCPF", cpf);
+	const handleCustomerCreated = (document: string) => {
+		form.setValue("customerDocument", document);
 	};
 
-	const onSubmit = (values: z.infer<typeof createOrderServiceSchema>) => {
-		const formattedValues = {
-			...values,
-			customerCPF: unmask.cpf(values.customerCPF),
-		};
-
-		console.log("Ordem de serviço a ser criada:", formattedValues);
+	const onSubmit = (values: FormOutput) => {
+		// TODO: send to the API once clients and brands are loaded from the server
+		console.log("Watch repair order to create:", values);
 	};
-
-	const [selectedMarca, setSelectedMarca] = useState("");
-	const [selectedCategoria, setSelectedCategoria] = useState("");
-
-	const { data: devices = [], isLoading: loadingDevices } = useQuery<
-		DeviceOption[]
-	>({
-		queryKey: ["devices"],
-		queryFn: getDevices,
-		//TODO: implementar fetch real para devices
-	});
-
-	const marcas = useMemo(() => {
-		return [...new Set(devices.map((device) => device.marca))];
-	}, [devices]);
-
-	const categorias = useMemo(() => {
-		if (!selectedMarca) {
-			return [];
-		}
-		return [
-			...new Set(
-				devices
-					.filter((device) => device.marca === selectedMarca)
-					.map((device) => device.categoria)
-			),
-		];
-	}, [devices, selectedMarca]);
-
-	const modelos = useMemo(() => {
-		if (!(selectedMarca && selectedCategoria)) {
-			return [];
-		}
-
-		return devices.filter(
-			(device) =>
-				device.marca === selectedMarca && device.categoria === selectedCategoria
-		);
-	}, [devices, selectedMarca, selectedCategoria]);
-
-	const modeloPlaceholder = useMemo(() => {
-		if (!(selectedMarca && selectedCategoria)) {
-			return "Selecione marca e categoria primeiro";
-		}
-
-		if (loadingDevices) {
-			return "Carregando modelos...";
-		}
-
-		return "Selecione um modelo";
-	}, [selectedMarca, selectedCategoria, loadingDevices]);
 
 	const selectedImages = form.watch("images") ?? [];
 
@@ -162,26 +154,330 @@ export function NewServiceOrderForm({
 	return (
 		<Form {...form}>
 			<form
-				className={cn("space-y-4", className)}
+				className={cn("space-y-6", className)}
 				onSubmit={form.handleSubmit(onSubmit)}
 				{...props}
 			>
-				<div className="flex grow gap-4">
-					<div className="flex grow flex-col gap-4">
+				<section className="space-y-4">
+					<h3 className="font-semibold text-sm">Customer</h3>
+					<div className="flex grow gap-4">
 						<FormField
 							control={form.control}
-							name="customerCPF"
+							name="customerDocument"
 							render={({ field }) => (
 								<FormItem className="grow">
-									<FormLabel>CPF do cliente</FormLabel>
+									<FormLabel>Customer ID (DNI)</FormLabel>
 									<FormControl>
 										<Input
-											placeholder="123.456.789-00"
+											inputMode="numeric"
+											placeholder="30123456"
 											{...field}
-											onInput={(e) =>
-												form.setValue("customerCPF", e.currentTarget.value)
+										/>
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+
+						<Sheet>
+							<SheetTrigger asChild className="mt-5.5">
+								<Button className="shrink-0" type="button">
+									New customer <UserPlus className="size-4" />
+								</Button>
+							</SheetTrigger>
+							<SheetContent>
+								<SheetHeader>
+									<SheetTitle>New customer</SheetTitle>
+									<SheetDescription>
+										Fill in the fields below to add a customer.
+									</SheetDescription>
+								</SheetHeader>
+								<NewClientForm
+									className="px-4"
+									onCustomerCreated={handleCustomerCreated}
+								/>
+							</SheetContent>
+						</Sheet>
+					</div>
+				</section>
+
+				<section className="space-y-4">
+					<h3 className="font-semibold text-sm">Watch</h3>
+					<div className="grid gap-4 sm:grid-cols-2">
+						<FormField
+							control={form.control}
+							name="brand"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Brand</FormLabel>
+									<FormControl>
+										<Input
+											list={BRANDS_DATALIST_ID}
+											placeholder="Casio, Seiko, Citizen..."
+											{...field}
+										/>
+									</FormControl>
+									<datalist id={BRANDS_DATALIST_ID}>
+										{COMMON_WATCH_BRANDS.map((brand) => (
+											<option key={brand} value={brand} />
+										))}
+									</datalist>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+
+						<FormField
+							control={form.control}
+							name="model"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Model</FormLabel>
+									<FormControl>
+										<Input placeholder="Seiko 5 Sports" {...field} />
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+
+						<FormField
+							control={form.control}
+							name="referenceNumber"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Reference number</FormLabel>
+									<FormControl>
+										<Input
+											placeholder="SRPD55K1"
+											{...field}
+											value={field.value ?? ""}
+										/>
+									</FormControl>
+									<FormDescription>
+										Usually printed on the case back.
+									</FormDescription>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+
+						<FormField
+							control={form.control}
+							name="serialNumber"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Serial number</FormLabel>
+									<FormControl>
+										<Input
+											placeholder="9X1234"
+											{...field}
+											value={field.value ?? ""}
+										/>
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+
+						<FormField
+							control={form.control}
+							name="movementType"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Movement</FormLabel>
+									<Select
+										onValueChange={field.onChange}
+										value={field.value ?? ""}
+									>
+										<FormControl>
+											<SelectTrigger className="w-full">
+												<SelectValue placeholder="Pick the movement type" />
+											</SelectTrigger>
+										</FormControl>
+										<SelectContent>
+											{Object.values(WATCH_MOVEMENT_TYPES).map((movement) => (
+												<SelectItem key={movement.id} value={movement.id}>
+													{movement.label}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+
+						<FormField
+							control={form.control}
+							name="caliber"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Caliber</FormLabel>
+									<FormControl>
+										<Input
+											placeholder="4R36, Miyota 2035..."
+											{...field}
+											value={field.value ?? ""}
+										/>
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+					</div>
+				</section>
+
+				<section className="space-y-4">
+					<h3 className="font-semibold text-sm">Intake</h3>
+
+					<FormField
+						control={form.control}
+						name="description"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Problem reported by the customer</FormLabel>
+								<FormControl>
+									<Textarea
+										placeholder="Stopped working, runs late, fogged glass..."
+										{...field}
+									/>
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+
+					<FormField
+						control={form.control}
+						name="requestedServices"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Services requested</FormLabel>
+								<FormControl>
+									<ToggleChips
+										onChange={field.onChange}
+										options={WATCH_SERVICES}
+										value={field.value ?? []}
+									/>
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+
+					<FormField
+						control={form.control}
+						name="intakeCondition"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Condition when received</FormLabel>
+								<FormControl>
+									<Textarea
+										placeholder="Scratches on the bezel, crown missing, strap worn..."
+										{...field}
+										value={field.value ?? ""}
+									/>
+								</FormControl>
+								<FormDescription>
+									Write down anything already damaged so there are no surprises
+									on pickup.
+								</FormDescription>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+
+					<FormField
+						control={form.control}
+						name="itemsReceived"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Left with the watch</FormLabel>
+								<FormControl>
+									<ToggleChips
+										onChange={field.onChange}
+										options={WATCH_ITEMS_RECEIVED}
+										value={field.value ?? []}
+									/>
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+				</section>
+
+				<section className="space-y-4">
+					<h3 className="font-semibold text-sm">Quote</h3>
+					<div className="grid gap-4 sm:grid-cols-3">
+						<FormField
+							control={form.control}
+							name="estimatedCost"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Estimated cost ($)</FormLabel>
+									<FormControl>
+										<Input
+											inputMode="decimal"
+											min={0}
+											placeholder="15000"
+											step="0.01"
+											type="number"
+											{...field}
+											onChange={(e) =>
+												field.onChange(
+													e.target.value === "" ? null : e.target.value
+												)
 											}
-											ref={cpfMask}
+											value={(field.value as string | number | null) ?? ""}
+										/>
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+
+						<FormField
+							control={form.control}
+							name="estimatedDeliveryDate"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Ready by</FormLabel>
+									<FormControl>
+										<Input
+											type="date"
+											{...field}
+											onChange={(e) =>
+												field.onChange(
+													e.target.value === "" ? null : e.target.value
+												)
+											}
+											value={(field.value as string | null) ?? ""}
+										/>
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+
+						<FormField
+							control={form.control}
+							name="warrantyDays"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Warranty (days)</FormLabel>
+									<FormControl>
+										<Input
+											inputMode="numeric"
+											min={0}
+											type="number"
+											{...field}
+											onChange={(e) =>
+												field.onChange(
+													e.target.value === "" ? null : e.target.valueAsNumber
+												)
+											}
+											value={field.value ?? ""}
 										/>
 									</FormControl>
 									<FormMessage />
@@ -190,181 +486,27 @@ export function NewServiceOrderForm({
 						/>
 					</div>
 
-					<Sheet>
-						<SheetTrigger asChild className="mt-5.5">
-							<Button className="shrink-0" type="button">
-								Cadastrar novo <UserPlus className="size-4" />
-							</Button>
-						</SheetTrigger>
-						<SheetContent>
-							<SheetHeader>
-								<SheetTitle>Novo cliente</SheetTitle>
-								<SheetDescription>
-									Cadastre um novo cliente preenchendo os campos abaixo.
-								</SheetDescription>
-							</SheetHeader>
-							<NewClientForm
-								className="px-4"
-								onCustomerCreated={handleCustomerCreated}
-							/>
-						</SheetContent>
-					</Sheet>
-				</div>
-
-				<FormField
-					control={form.control}
-					name="description"
-					render={({ field }) => (
-						<FormItem className="flex-grow">
-							<FormLabel>Defeito relatado pelo cliente</FormLabel>
-							<FormControl>
-								<Textarea
-									autoCapitalize="off"
-									autoCorrect="off"
-									placeholder="Descreva o defeito relatado pelo cliente"
-									spellCheck={false}
-									{...field}
-								/>
-							</FormControl>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
-
-				<FormItem className="flex-grow">
-					<FormLabel>Marca</FormLabel>
-					<FormControl>
-						<Select
-							disabled={loadingDevices}
-							onValueChange={(value) => {
-								setSelectedMarca(value);
-								setSelectedCategoria("");
-								form.setValue("deviceId", "", { shouldValidate: true });
-							}}
-							value={selectedMarca}
-						>
-							<SelectTrigger className="w-full">
-								<SelectValue
-									placeholder={
-										loadingDevices ? "Carregando..." : "Selecione uma marca"
-									}
-								/>
-							</SelectTrigger>
-							<SelectContent>
-								{marcas.map((marca) => (
-									<SelectItem key={marca} value={marca}>
-										{marca}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</FormControl>
-					<FormMessage />
-				</FormItem>
-
-				<FormItem className="flex-grow">
-					<FormLabel>Categoria do aparelho</FormLabel>
-					<FormControl>
-						<Select
-							disabled={!selectedMarca || loadingDevices}
-							onValueChange={(value) => {
-								setSelectedCategoria(value);
-								form.setValue("deviceId", "", { shouldValidate: true });
-							}}
-							value={selectedCategoria}
-						>
-							<SelectTrigger className="w-full">
-								<SelectValue
-									placeholder={
-										loadingDevices
-											? "Carregando categorias..."
-											: "Selecione uma categoria"
-									}
-								/>
-							</SelectTrigger>
-							<SelectContent>
-								{categorias.map((categoria) => (
-									<SelectItem key={categoria} value={categoria}>
-										{categoria}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</FormControl>
-					<FormMessage />
-				</FormItem>
-
-				<FormField
-					control={form.control}
-					name="deviceId"
-					render={({ field }) => (
-						<FormItem className="flex-grow">
-							<FormLabel>Modelo</FormLabel>
-							<FormControl>
-								<Select
-									disabled={
-										!(selectedMarca && selectedCategoria) || loadingDevices
-									}
-									onValueChange={field.onChange}
-									value={field.value ?? ""}
-								>
-									<SelectTrigger className="w-full">
-										<SelectValue placeholder={modeloPlaceholder} />
-									</SelectTrigger>
-									<SelectContent>
-										{modelos.map((modelo) => (
-											<SelectItem key={modelo.id} value={modelo.id}>
-												{modelo.modelo}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</FormControl>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
-
-				<FormField
-					control={form.control}
-					name="deviceIMEI"
-					render={({ field }) => (
-						<FormItem className="flex-grow">
-							<FormLabel>Número de IMEI</FormLabel>
-							<FormControl>
-								<Input placeholder="123456789012345" {...field} />
-							</FormControl>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
-
-				<FormField
-					control={form.control}
-					name="notes"
-					render={({ field }) => (
-						<FormItem className="flex-grow">
-							<FormLabel>Observações</FormLabel>
-							<FormControl>
-								<Textarea
-									autoCapitalize="off"
-									autoCorrect="off"
-									placeholder="Adicione observações sobre a ordem de serviço"
-									spellCheck={false}
-									{...field}
-								/>
-							</FormControl>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
+					<FormField
+						control={form.control}
+						name="notes"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Internal notes</FormLabel>
+								<FormControl>
+									<Textarea placeholder="Only visible to the shop" {...field} />
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+				</section>
 
 				<FormField
 					control={form.control}
 					name="images"
 					render={({ field }) => (
 						<FormItem>
-							<FormLabel>Fotos do aparelho</FormLabel>
+							<FormLabel>Photos of the watch</FormLabel>
 							<FormControl>
 								<div className="space-y-3">
 									<input
@@ -385,8 +527,8 @@ export function NewServiceOrderForm({
 									>
 										<span>
 											{selectedImages.length > 0
-												? `${selectedImages.length} imagem(ns) selecionada(s)`
-												: "Selecione fotos do aparelho (PNG, JPG, WEBP)"}
+												? `${selectedImages.length} photo(s) selected`
+												: "Front, back and any damage (PNG, JPG, WEBP)"}
 										</span>
 										<ImagePlus className="h-4 w-4" />
 									</label>
@@ -415,7 +557,7 @@ export function NewServiceOrderForm({
 														/>
 
 														<button
-															aria-label={`Remover ${file.name}`}
+															aria-label={`Remove ${file.name}`}
 															className="absolute top-2 right-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-white transition hover:bg-black"
 															onClick={() => {
 																const nextFiles = selectedImages.filter(
@@ -440,9 +582,9 @@ export function NewServiceOrderForm({
 					)}
 				/>
 
-				<div className="pt-4">
+				<div className="pt-2">
 					<Button className="w-full" type="submit">
-						Salvar ordem de serviço
+						Save repair order
 					</Button>
 				</div>
 			</form>
