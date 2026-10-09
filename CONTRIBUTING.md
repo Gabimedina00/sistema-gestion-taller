@@ -4,7 +4,7 @@ Obrigado pelo interesse em contribuir! Este documento cobre como configurar o am
 
 ## Como rodar o projeto localmente
 
-O Fixr é um monorepo com Bun workspaces (`apps/server`, `apps/web`, `apps/admin`, `apps/workers`, `packages/*`). Veja o `AGENTS.md` para o layout completo do projeto e referência de comandos.
+O Fixr é um monorepo com Bun workspaces (`apps/server`, `apps/web`, `apps/workers`, `packages/*`). Veja o `AGENTS.md` para o layout completo do projeto e referência de comandos.
 
 ### Pré-requisitos
 
@@ -30,10 +30,9 @@ O Fixr é um monorepo com Bun workspaces (`apps/server`, `apps/web`, `apps/admin
    cp apps/web/.env.example apps/web/.env
    cp apps/workers/.env.example apps/workers/.env
    cp packages/mail/.env.example packages/mail/.env
-   cp apps/admin/.env.example apps/admin/.env   # só necessário se for mexer no painel admin
    ```
 
-   Os valores de exemplo já funcionam para desenvolvimento local; chaves de serviços externos (Resend, Google OAuth, Clerk, Cloudflare R2/Turnstile) precisam ser geradas nos respectivos painéis — veja os comentários em cada `.env.example`. As variáveis são validadas com Zod pelo pacote `@fixr/env`; o app não sobe se faltar alguma.
+   Os valores de exemplo já funcionam para desenvolvimento local; chaves de serviços externos (Resend, Google OAuth, Cloudflare R2/Turnstile) precisam ser geradas nos respectivos painéis — veja os comentários em cada `.env.example`. As variáveis são validadas com Zod pelo pacote `@fixr/env`; o app não sobe se faltar alguma.
 
 3. Suba o banco (MySQL) e o Redis via Docker, e rode as migrations:
 
@@ -46,12 +45,10 @@ O Fixr é um monorepo com Bun workspaces (`apps/server`, `apps/web`, `apps/admin
 
    ```bash
    bun run dev         # server (3333), web (3000) e workers
-   bun run dev:admin   # opcional: painel admin (6969), auth via Clerk
    ```
 
    - API REST: `http://localhost:3333` (docs em `/docs`)
    - Web app: `http://localhost:3000`
-   - Admin panel: `http://localhost:6969`
    - Drizzle Studio: `bun run db:studio`
 
 Antes de abrir um PR, garanta que os comandos abaixo passem:

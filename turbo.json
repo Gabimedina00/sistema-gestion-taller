@@ -42,10 +42,6 @@
       "dependsOn": ["^build:web"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"]
     },
-    "build:admin": {
-      "dependsOn": ["^build:admin"],
-      "inputs": ["$TURBO_DEFAULT$", ".env*"]
-    },
     "lint": {
       "dependsOn": ["^lint"],
       "env": ["REDIS_PASSWORD", "FOO"]

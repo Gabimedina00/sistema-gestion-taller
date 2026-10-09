@@ -1,2 +1,9 @@
+.git
 node_modules
-.turbo
+**/node_modules
+**/.turbo
+**/.next
+**/dist
+**/.env
+**/.env.*
+!**/.env.example

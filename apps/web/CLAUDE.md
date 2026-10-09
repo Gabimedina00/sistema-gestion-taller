@@ -8,7 +8,7 @@ Next.js App Router, Tailwind + shadcn/ui (`components/ui`), React Hook Form + Zo
 
 - `app/(public)/...` — unauthenticated routes (auth pages, legal, downtime).
 - `app/(protected)/...` — authenticated routes (dashboard).
-- `lib/auth/` — JWT/cookie auth against `apps/server` (`axios.ts` is the configured client, `utils.ts` has token helpers). This is a different auth system from `apps/admin`'s Clerk — don't cross-wire them.
+- `lib/auth/` — JWT/cookie auth against `apps/server` (`axios.ts` is the configured client, `utils.ts` has token helpers).
 - `lib/services/` — one file per API resource, wrapping the shared `axios` instance with `tryCatch()`. New API calls go here, not inline `fetch`/`axios` in components.
 - `lib/rbac/` — client-side permission checks mirroring the server's `@fixr/permissions` roles; use these instead of re-deriving role logic in components.
 - `components/ui/**` and `components/magicui/**` are vendored/generated (shadcn-style) and excluded from Biome — avoid hand-editing unless deliberately customizing a primitive.

@@ -6,7 +6,6 @@
   "exports": {
     "./server": "./src/server.ts",
     "./web": "./src/web.ts",
-    "./admin": "./src/admin.ts",
     "./mail": "./src/mail.ts",
     "./db": "./src/db.ts",
     "./workers": "./src/workers.ts"
@@ -19,7 +18,6 @@
   },
   "devDependencies": {
     "@fixr/typescript-config": "catalog:",
-    "@fixr/infra": "workspace:*",
     "typescript": "catalog:"
   }
 }
