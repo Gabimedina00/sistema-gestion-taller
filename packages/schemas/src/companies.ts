@@ -1,0 +1,50 @@
+import { z } from "zod";
+import { passwordSchema } from "./auth";
+import { documentSchema } from "./documents";
+
+export const createCompanySchema = z.object({
+	name: z
+		.string()
+		.min(3, { message: "Name must be at least 3 characters long." })
+		.max(100, { message: "Name must be at most 100 characters long." }),
+	cnpj: documentSchema("cnpj"),
+	address: z
+		.string()
+		.min(3, { message: "Address must be at least 3 characters long." })
+		.max(255, { message: "Address must be at most 255 characters long." })
+		.optional()
+		.or(z.literal("")),
+	subdomain: z
+		.string()
+		.min(1, { message: "Subdomain must be at least 1 character long." })
+		.max(63, { message: "Subdomain must be at most 63 characters long." })
+		.regex(/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/, {
+			message:
+				"Subdomain can only contain lowercase letters (a-z), numbers (0-9), and hyphens (-), but cannot start or end with a hyphen",
+		}),
+	owner_cpf: documentSchema("cpf"),
+	owner_email: z.string().email({ message: "Invalid email address." }),
+	owner_password: passwordSchema,
+});
+
+export const getCompanyBySubdomainSchema = z.object({
+	subdomain: z
+		.string()
+		.min(1, { message: "Subdomain must be at least 1 character long." })
+		.max(63, { message: "Subdomain must be at most 63 characters long." })
+		.regex(/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/, {
+			message:
+				"Subdomain can only contain lowercase letters (a-z), numbers (0-9), and hyphens (-), but cannot start or end with a hyphen",
+		}),
+});
+
+export const getCompanyNestedDataSchema = z.object({
+	subdomain: z
+		.string()
+		.min(1, { message: "Subdomain must be at least 1 character long." })
+		.max(63, { message: "Subdomain must be at most 63 characters long." })
+		.regex(/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/, {
+			message:
+				"Subdomain can only contain lowercase letters (a-z), numbers (0-9), and hyphens (-), but cannot start or end with a hyphen",
+		}),
+});

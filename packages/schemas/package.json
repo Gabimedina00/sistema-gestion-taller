@@ -1,0 +1,77 @@
+{
+  "name": "@fixr/schemas",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "tsc --watch",
+    "build": "biome check && tsc",
+    "lint": "biome check",
+    "lint:write": "biome check --write"
+  },
+  "exports": {
+    "./account": {
+      "types": "./src/account.ts",
+      "default": "./src/account.ts"
+    },
+    "./auth": {
+      "types": "./src/auth.ts",
+      "default": "./src/auth.ts"
+    },
+    "./roles": {
+      "types": "./src/roles.ts",
+      "default": "./src/roles.ts"
+    },
+    "./credentials": {
+      "types": "./src/credentials.ts",
+      "default": "./src/credentials.ts"
+    },
+    "./documents": {
+      "types": "./src/documents.ts",
+      "default": "./src/documents.ts"
+    },
+    "./utils": {
+      "types": "./src/utils.ts",
+      "default": "./src/utils.ts"
+    },
+    "./companies": {
+      "types": "./src/companies.ts",
+      "default": "./src/companies.ts"
+    },
+    "./employees": {
+      "types": "./src/employees.ts",
+      "default": "./src/employees.ts"
+    },
+    "./common": {
+      "types": "./src/common.ts",
+      "default": "./src/common.ts"
+    },
+    "./clients": {
+      "types": "./src/clients.ts",
+      "default": "./src/clients.ts"
+    },
+    "./service-orders": {
+      "types": "./src/service-orders.ts",
+      "default": "./src/service-orders.ts"
+    },
+    "./uploads": {
+      "types": "./src/uploads.ts",
+      "default": "./src/uploads.ts"
+    },
+    "./models": {
+      "types": "./src/models.ts",
+      "default": "./src/models.ts"
+    }
+  },
+  "devDependencies": {
+    "@fixr/typescript-config": "workspace:*",
+    "@types/eslint": "^8.56.5",
+    "@types/bun": "catalog:",
+    "@biomejs/biome": "catalog:",
+    "typescript": "catalog:",
+    "zod": "catalog:"
+  },
+  "dependencies": {
+    "zod": "catalog:"
+  }
+}

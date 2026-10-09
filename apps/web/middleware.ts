@@ -1,0 +1,236 @@
+import { cookieKey } from "@fixr/constants/cookies";
+import { env } from "@fixr/env/web";
+import { createAbility } from "@fixr/permissions";
+import { type NextRequest, NextResponse } from "next/server";
+import {
+	getRequiredPermission,
+	getRequiredRoles,
+	isPublicRoute,
+	routeRules,
+} from "./lib/rbac";
+import { parseJwt } from "./lib/utils";
+
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: <TODO: Refactor this later to split it into smaller functions>
+export async function middleware(request: NextRequest) {
+	const token = request.cookies.get(cookieKey("session"))?.value;
+	const refreshToken = request.cookies.get(cookieKey("refreshToken"))?.value;
+	const hasDeletedAccount = request.cookies.get(
+		cookieKey("showDeletedDialog")
+	)?.value;
+
+	const isProtectedRoute = request.nextUrl.pathname.startsWith("/dashboard");
+	const isLoginPath = request.nextUrl.pathname.startsWith("/auth/login");
+	const isForgotPasswordTokenPath = request.nextUrl.pathname.startsWith(
+		"/auth/forgot-password/"
+	);
+	const _isDashboardRoute = request.nextUrl.pathname.startsWith("/dashboard/");
+
+	/**
+	 * Rule used to make so the user can't access the resetPassword form without providing a valid token
+	 *
+	 * The backend validates expiration, token type, if the token is used and that its not a random string.
+	 */
+	if (isForgotPasswordTokenPath) {
+		try {
+			const tokenValidationResponse = await validatePasswordResetToken(request);
+			if (!tokenValidationResponse) {
+				return NextResponse.redirect(
+					new URL("/auth/login", env.NEXT_PUBLIC_APP_URL)
+				);
+			}
+		} catch (error) {
+			console.error("Error during password reset token validation:", error);
+			return NextResponse.redirect(
+				new URL("/auth/login", env.NEXT_PUBLIC_APP_URL)
+			);
+		}
+	}
+
+	// Handle all login path cases first
+	if (isLoginPath) {
+		/**
+		 * If the user has deleted his account, he will get redirected to the login path, but may still have a token active on cookies.
+		 * This would crash the app, as the system would try to redirect him to the dashboard with a token related to a deleted account.
+		 * So we check for the cookie that shows the dialog and ignore the redirection to the dashboard, also deleting the possible exis.
+		 */
+		if (hasDeletedAccount) {
+			request.cookies.delete(cookieKey("refreshToken") as string);
+			request.cookies.delete(cookieKey("session") as string);
+			return NextResponse.next();
+		}
+
+		// If the user is at the loginPath and has a valid token, they need to go to dashboard.
+		if (token || refreshToken) {
+			return NextResponse.redirect(
+				new URL("/dashboard/account", env.NEXT_PUBLIC_APP_URL)
+			);
+		}
+
+		return NextResponse.next();
+	}
+
+	const payload = parseJwt(token);
+
+	//Revalidate the user JWT if its not present (cookie vanished) or expired
+	if (!(token && payload) || payload.exp * 1000 < Date.now()) {
+		try {
+			const response = await revalidate(request, isProtectedRoute);
+			return response;
+		} catch (error) {
+			console.error("Error during token revalidation:", error);
+
+			if (isProtectedRoute) {
+				return NextResponse.redirect(
+					new URL("/auth/login", env.NEXT_PUBLIC_APP_URL)
+				);
+			}
+
+			return NextResponse.next();
+		}
+	}
+
+	// Restrict the user so it can only access his company tenant
+	if (isProtectedRoute) {
+		// Split into [ '', 'dashboard', '{tenant}', ...rest ]
+		const segments = request.nextUrl.pathname.split("/");
+		const requestedTenant = segments[2];
+		const userTenant = payload?.company?.subdomain;
+
+		if (!userTenant || requestedTenant !== userTenant) {
+			// Rebuild whatever comes after the tenant
+			const rest = segments.slice(3).join("/");
+			const redirectPath = rest
+				? `/dashboard/${userTenant}/${rest}`
+				: `/dashboard/${userTenant}`;
+
+			return NextResponse.redirect(
+				new URL(redirectPath, env.NEXT_PUBLIC_APP_URL)
+			);
+		}
+
+		/**
+		 * Role-Based Access Control (RBAC) enforcement.
+		 *
+		 * Resolves the user's role from the JWT payload and evaluates
+		 * both role and permission requirements defined in the route rules.
+		 * If the user lacks the necessary role or permission, they are
+		 * redirected to the home dashboard.
+		 */
+		const pathname = request.nextUrl.pathname;
+		const userRole = payload?.company?.role ?? "guest";
+
+		/**
+		 * Public routes (e.g., login, support) are accessible without
+		 * authorization checks. Only protected routes with defined
+		 * permissions or roles proceed to RBAC evaluation.
+		 */
+		if (!isPublicRoute(pathname, routeRules)) {
+			const requiredPerm = getRequiredPermission(pathname, routeRules);
+			const requiredRoles = getRequiredRoles(pathname, routeRules);
+
+			const ability = createAbility(userRole);
+
+			/**
+			 * Role-based gate: if the route specifies required roles,
+			 * verify the user's role is included. Redirects to home
+			 * when the user lacks an appropriate role.
+			 */
+			if (requiredRoles && requiredRoles.length > 0) {
+				const hasRequiredRole = requiredRoles.includes(userRole);
+				if (!hasRequiredRole) {
+					return redirectToHome(userTenant);
+				}
+			}
+
+			/**
+			 * Permission-based gate: if the route requires a specific
+			 * permission, verify the user's ability grants it.
+			 * Redirects to home when the user lacks the required permission.
+			 */
+			if (requiredPerm && ability.cannot(requiredPerm as never)) {
+				return redirectToHome(userTenant);
+			}
+		}
+	}
+
+	return NextResponse.next();
+
+	function redirectToHome(tenant: string) {
+		return NextResponse.redirect(
+			new URL(`/dashboard/${tenant}/home`, env.NEXT_PUBLIC_APP_URL)
+		);
+	}
+}
+
+async function revalidate(request: NextRequest, isProtectedRoute: boolean) {
+	const revalidateResponse = await fetch(
+		`${env.NEXT_PUBLIC_API_URL}/auth/token`,
+		{
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Cookie: request.cookies.toString(),
+			},
+			body: JSON.stringify({}),
+		}
+	);
+
+	if (revalidateResponse.ok) {
+		const setCookies = revalidateResponse.headers.getSetCookie();
+		if (setCookies.length > 0) {
+			const res = NextResponse.next();
+			for (const cookie of setCookies) {
+				res.headers.append("Set-Cookie", cookie);
+			}
+			return res;
+		}
+	}
+
+	// Handle invalid refresh token: redirect to signout route which will clear cookies and redirect to login
+	if (revalidateResponse.status === 401) {
+		return NextResponse.redirect(
+			new URL("/api/auth/signout", env.NEXT_PUBLIC_APP_URL)
+		);
+	}
+
+	// Revalidation failed: redirect to login
+	if (isProtectedRoute) {
+		return NextResponse.redirect(
+			new URL("/auth/login", env.NEXT_PUBLIC_APP_URL)
+		);
+	}
+
+	return NextResponse.next();
+}
+
+async function validatePasswordResetToken(
+	request: NextRequest
+): Promise<boolean> {
+	const urlParts = request.nextUrl.pathname.split("/");
+	const token = urlParts.at(-1);
+
+	const tokenValidationResponse = await fetch(
+		`${env.NEXT_PUBLIC_API_URL}/credentials/password/reset?token=${token}`,
+		{
+			method: "GET",
+			headers: {
+				"Content-Type": "application/json",
+			},
+		}
+	);
+
+	if (tokenValidationResponse.ok) {
+		const responseData = await tokenValidationResponse.json();
+		return responseData.data?.valid === true;
+	}
+
+	return false;
+}
+
+export const config = {
+	matcher: [
+		"/dashboard/:path*",
+		"/auth/login",
+		"/auth/forgot-password/:token*",
+	],
+};

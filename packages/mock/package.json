@@ -1,0 +1,11 @@
+{
+  "name": "@fixr/mock",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@faker-js/faker": "^10.4.0"
+  }
+}

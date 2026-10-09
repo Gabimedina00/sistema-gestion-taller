@@ -1,0 +1,46 @@
+{
+  "name": "@fixr/mail",
+  "version": "0.1.10",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "biome check && tsc",
+    "dev": "tsc --watch",
+    "studio": "email dev",
+    "export": "email export",
+    "lint": "biome check",
+    "lint:write": "biome check --write"
+  },
+  "exports": {
+    "./services": {
+      "types": "./services/mailing.ts",
+      "default": "./services/mailing.ts"
+    },
+    "./queue": {
+      "types": "./services/queue/queue.ts",
+      "default": "./services/queue/queue.ts"
+    }
+  },
+  "dependencies": {
+    "@biomejs/biome": "catalog:",
+    "@fixr/constants": "workspace:*",
+    "@fixr/env": "workspace:*",
+    "@react-email/components": "catalog:",
+    "@react-email/tailwind": "1.0.4",
+    "@types/bun": "catalog:",
+    "@types/nodemailer": "^7.0.9",
+    "bullmq": "catalog:",
+    "ioredis": "catalog:",
+    "nodemailer": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "resend": "^4.5.1",
+    "typescript": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "react-email": "3.0.7"
+  }
+}

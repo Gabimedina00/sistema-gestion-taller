@@ -1,0 +1,53 @@
+{
+  "name": "@fixr/constants",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "tsc --watch",
+    "build": "biome check && tsc",
+    "lint": "biome check",
+    "lint:write": "biome check --write"
+  },
+  "exports": {
+    "./app": {
+      "types": "./src/app.ts",
+      "default": "./src/app.ts"
+    },
+    "./cookies": {
+      "types": "./src/cookies.ts",
+      "default": "./src/cookies.ts"
+    },
+    "./masks": {
+      "types": "./src/masks.ts",
+      "default": "./src/masks.ts"
+    },
+    "./messages": {
+      "types": "./src/messages.ts",
+      "default": "./src/messages.ts"
+    },
+    "./roles": {
+      "types": "./src/roles.ts",
+      "default": "./src/roles.ts"
+    },
+    "./enforcements": {
+      "types": "./src/enforcements.ts",
+      "default": "./src/enforcements.ts"
+    },
+    "./slug": {
+      "types": "./src/slug.ts",
+      "default": "./src/slug.ts"
+    }
+  },
+  "devDependencies": {
+    "@fixr/typescript-config": "workspace:*",
+    "@fixr/schemas": "workspace:*",
+    "@biomejs/biome": "catalog:",
+    "@types/eslint": "^8.56.5",
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
+  },
+  "dependencies": {
+    "zod": "catalog:"
+  }
+}
