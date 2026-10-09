@@ -43,7 +43,9 @@ export const env = createEnv({
 			.describe("Cloudflare Turnstile secret key"),
 		PUBLIC_API_URL: z
 			.url()
-			.describe("URL where browsers reach this API (used in file and upload links)"),
+			.describe(
+				"URL where browsers reach this API (used in file and upload links)"
+			),
 		UPLOADS_DIR: z
 			.string()
 			.default("./uploads")
