@@ -169,3 +169,62 @@ export const createOrderServiceSchema = watchDetailsSchema.extend({
 	assigned_to: z.string().optional(),
 	images: z.array(z.instanceof(File)).max(15, "Add up to 15 photos."),
 });
+
+export const serviceOrderParamsSchema = z.object({
+	subdomain: z.string().min(1).max(63),
+	id: z.string().cuid2({ message: "Invalid service order." }),
+});
+
+export const updateServiceOrderStatusSchema = z.object({
+	status: serviceOrderStatuses,
+});
+
+const serviceOrderPartySchema = z.object({ id: z.string(), name: z.string() });
+
+/** @description MariaDB hands JSON columns back as text */
+const jsonStringArray = z.preprocess(
+	(value) => (typeof value === "string" ? JSON.parse(value) : value),
+	z.array(z.string()).nullable()
+);
+
+/** @description One row of the service orders list */
+export const serviceOrderListItemSchema = z.object({
+	id: z.string(),
+	deviceModel: z.string(),
+	referenceNumber: z.string().nullable(),
+	requestedServices: jsonStringArray,
+	estimatedCost: z.string().nullable(),
+	estimatedDeliveryDate: z.coerce.date().nullable(),
+	reportedDefect: z.string(),
+	status: serviceOrderStatuses,
+	createdAt: z.coerce.date(),
+	updatedAt: z.coerce.date(),
+	client: serviceOrderPartySchema.extend({
+		dni: z.string(),
+		phone: z.string().nullable(),
+	}),
+	employee: serviceOrderPartySchema,
+	deviceCategory: serviceOrderPartySchema,
+	deviceMaker: serviceOrderPartySchema,
+});
+
+/** @description Everything shown on the service order page */
+export const serviceOrderDetailsSchema = serviceOrderListItemSchema.extend({
+	serialNumber: z.string().nullable(),
+	movementType: watchMovementTypes.nullable(),
+	caliber: z.string().nullable(),
+	itemsReceived: jsonStringArray,
+	intakeCondition: z.string().nullable(),
+	observations: z.string().nullable(),
+	warrantyDays: z.number().nullable(),
+	client: serviceOrderListItemSchema.shape.client.extend({
+		email: z.string().nullable(),
+	}),
+	photos: z.array(
+		z.object({
+			id: z.string(),
+			url: z.string(),
+			description: z.string().nullable(),
+		})
+	),
+});

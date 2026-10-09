@@ -1,9 +1,7 @@
-import { getServiceOrderById } from "@fixr/mock";
 import { ArrowLeft, Wrench } from "lucide-react";
-import { notFound } from "next/navigation";
 import { Heading } from "@/components/dashboard/heading";
-import { ServiceOrderDetailsLayout } from "@/components/dashboard/service-order";
 import { DashLink } from "@/components/dashboard/service-order/dash-link";
+import { ServiceOrderDetails } from "@/components/dashboard/service-order/service-order-details";
 import { Button } from "@/components/ui/button";
 
 type Params = Promise<{ subdomain: string; id: string }>;
@@ -14,12 +12,6 @@ export default async function ServiceOrderDetailsPage({
 	params: Params;
 }) {
 	const { subdomain, id } = await params;
-
-	const order = await getServiceOrderById(id);
-
-	if (!order) {
-		notFound();
-	}
 
 	return (
 		<div className="space-y-6">
@@ -32,25 +24,22 @@ export default async function ServiceOrderDetailsPage({
 				>
 					<DashLink href="/service-orders" subdomain={subdomain}>
 						<ArrowLeft className="size-4" />
-						Voltar
+						Back
 					</DashLink>
 				</Button>
 
 				<Heading
-					description={"Veja os detalhes completos da ordem de serviço abaixo"}
+					description="Everything about this repair. Change the status and let the customer know."
 					title={
 						<>
 							<Wrench className="mr-2.5 inline-block size-6.5 -translate-y-1 fill-primary text-primary" />
-							Ordem de serviço{" "}
-							<span className="font-(family-name:--font-inter) font-medium">
-								#{order.orderNumber}
-							</span>
+							Repair order
 						</>
 					}
 				/>
 			</div>
 
-			<ServiceOrderDetailsLayout order={order} subdomain={subdomain} />
+			<ServiceOrderDetails id={id} subdomain={subdomain} />
 		</div>
 	);
 }

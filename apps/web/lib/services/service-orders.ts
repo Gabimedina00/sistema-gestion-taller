@@ -1,7 +1,12 @@
 import { WATCH_CATEGORY_SLUG } from "@fixr/constants/watches";
-import type { createServiceOrderMockSchema } from "@fixr/schemas/service-orders";
+import {
+	type createServiceOrderMockSchema,
+	serviceOrderDetailsSchema,
+	serviceOrderListItemSchema,
+	type serviceOrderStatuses,
+} from "@fixr/schemas/service-orders";
 import type { uploadPresignResponseSchema } from "@fixr/schemas/uploads";
-import type { ApiResponse } from "@fixr/schemas/utils";
+import type { ApiResponse, PaginatedData } from "@fixr/schemas/utils";
 import type { z } from "zod";
 import { axios } from "../auth/axios";
 import { api } from "../utils";
@@ -66,6 +71,63 @@ export function createServiceOrder(
 		axios.post<ApiResponse<CreatedServiceOrder>>(
 			api(`/companies/${subdomain}/service-orders`),
 			data
+		)
+	);
+}
+
+export type ServiceOrderListItem = z.infer<typeof serviceOrderListItemSchema>;
+export type ServiceOrderDetails = z.infer<typeof serviceOrderDetailsSchema>;
+export type ServiceOrderStatus = z.infer<typeof serviceOrderStatuses>;
+
+export const serviceOrdersQueryKey = (subdomain: string) => [
+	"service-orders",
+	subdomain,
+];
+
+export async function listServiceOrders(
+	subdomain: string,
+	params: { page: number; query?: string; status?: ServiceOrderStatus }
+): Promise<ServiceResult<PaginatedData<ServiceOrderListItem>>> {
+	const result = await request(
+		axios.get<ApiResponse<PaginatedData<unknown>>>(
+			api(`/companies/${subdomain}/service-orders`),
+			{ params: { ...params, perPage: 20, query: params.query || undefined } }
+		)
+	);
+	if (result.error !== null) {
+		return result;
+	}
+	// Parsing turns the JSON date strings into Date objects
+	const records = result.data.records.map((record) =>
+		serviceOrderListItemSchema.parse(record)
+	);
+	return { ...result, data: { ...result.data, records } };
+}
+
+export async function getServiceOrder(
+	subdomain: string,
+	id: string
+): Promise<ServiceResult<ServiceOrderDetails>> {
+	const result = await request(
+		axios.get<ApiResponse<unknown>>(
+			api(`/companies/${subdomain}/service-orders/${id}`)
+		)
+	);
+	if (result.error !== null) {
+		return result;
+	}
+	return { ...result, data: serviceOrderDetailsSchema.parse(result.data) };
+}
+
+export function updateServiceOrderStatus(
+	subdomain: string,
+	id: string,
+	status: ServiceOrderStatus
+) {
+	return request(
+		axios.patch<ApiResponse<{ id: string; status: ServiceOrderStatus }>>(
+			api(`/companies/${subdomain}/service-orders/${id}/status`),
+			{ status }
 		)
 	);
 }

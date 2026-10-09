@@ -4,6 +4,8 @@ import { getCompanyNestedDataSchema } from "@fixr/schemas/companies";
 import {
 	createServiceOrderMockSchema,
 	getServiceOrdersQuerySchema,
+	serviceOrderParamsSchema,
+	updateServiceOrderStatusSchema,
 } from "@fixr/schemas/service-orders";
 import type { z } from "zod";
 import { serviceOrdersDocs } from "../../../core/docs/service-orders.docs";
@@ -56,6 +58,52 @@ export function serviceOrdersRoutes(fastify: FastifyTypedInstance) {
 				userJwt,
 				data: body,
 				subdomain,
+				response,
+			});
+		})
+	);
+
+	fastify.get(
+		"/:id",
+		{
+			preHandler: [
+				authenticateEmployee,
+				requirePermission(permissions.serviceOrders.read),
+			],
+			schema: serviceOrdersDocs.getServiceOrderSchema,
+		},
+		withErrorHandler(async (request, response) => {
+			const userJwt = request.user as z.infer<typeof userJWT>;
+			const { subdomain, id } = serviceOrderParamsSchema.parse(request.params);
+
+			await ServiceOrdersController.getServiceOrder({
+				userJwt,
+				subdomain,
+				id,
+				response,
+			});
+		})
+	);
+
+	fastify.patch(
+		"/:id/status",
+		{
+			preHandler: [
+				authenticateEmployee,
+				requirePermission(permissions.serviceOrders.changeStatus),
+			],
+			schema: serviceOrdersDocs.updateServiceOrderStatusSchema,
+		},
+		withErrorHandler(async (request, response) => {
+			const userJwt = request.user as z.infer<typeof userJWT>;
+			const { subdomain, id } = serviceOrderParamsSchema.parse(request.params);
+			const { status } = updateServiceOrderStatusSchema.parse(request.body);
+
+			await ServiceOrdersController.updateServiceOrderStatus({
+				userJwt,
+				subdomain,
+				id,
+				status,
 				response,
 			});
 		})

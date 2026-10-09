@@ -37,6 +37,11 @@ export const serviceOrdersErrors = defineErrors({
 			"One or more uploads were not found or do not belong to this company.",
 		status: 400,
 	},
+	SERVICE_ORDER_NOT_FOUND: {
+		code: "service_order_not_found",
+		message: "This service order doesn't exist.",
+		status: 404,
+	},
 	SERVICE_ORDER_PAGE_OUT_OF_BOUNDS: {
 		code: "page_out_of_bounds",
 		message: "The requested page exceeds the total number of pages.",

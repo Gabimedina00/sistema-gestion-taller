@@ -6,7 +6,10 @@ import { getCompanyNestedDataSchema } from "@fixr/schemas/companies";
 import {
 	createServiceOrderMockSchema,
 	getServiceOrdersQuerySchema,
+	serviceOrderDetailsSchema,
+	serviceOrderParamsSchema,
 	serviceOrderStatuses,
+	updateServiceOrderStatusSchema,
 } from "@fixr/schemas/service-orders";
 import { paginatedDataSchema } from "@fixr/schemas/utils";
 import type { FastifySchema } from "fastify";
@@ -22,6 +25,8 @@ const serviceOrderListRecordSchema = z.object({
 	client: z.object({
 		id: z.string(),
 		name: z.string(),
+		dni: z.string(),
+		phone: z.string().nullable(),
 	}),
 	employee: z.object({
 		id: z.string(),
@@ -37,6 +42,84 @@ const serviceOrderListRecordSchema = z.object({
 	}),
 });
 
+const forbidden = z
+	.union([
+		zodResponseSchema({
+			status: 403,
+			error: "Forbidden",
+			code: "not_allowed",
+			message: "You are not authorized to access this company.",
+			data: null,
+		}).describe("The account doesn't belong to this company."),
+		zodResponseSchema({
+			status: 403,
+			error: "Forbidden",
+			code: "missing_required_permissions",
+			message: "You dont have the required permissions to perform this action",
+			data: null,
+		}).describe("The employee's role can't do this."),
+	])
+	.describe("Not allowed.");
+
+const notFound = z
+	.union([
+		zodResponseSchema({
+			status: 404,
+			error: "Not Found",
+			code: "company_not_found",
+			message: "There's no companies bound to your account",
+			data: null,
+		}),
+		zodResponseSchema({
+			status: 404,
+			error: "Not Found",
+			code: "service_order_not_found",
+			message: "This service order doesn't exist.",
+			data: null,
+		}),
+	])
+	.describe("No company, or no such order in it.");
+
+const getServiceOrderSchema: FastifySchema = {
+	tags: ["Service Orders"],
+	summary: "Get a service order",
+	description:
+		"Everything about one order: customer, watch, intake, quote and photos.",
+	params: serviceOrderParamsSchema,
+	response: {
+		200: zodResponseSchema({
+			status: 200,
+			error: null,
+			code: "get_service_order_success",
+			message: "Service order retrieved successfully.",
+			data: serviceOrderDetailsSchema,
+		}).describe("Service order found."),
+		403: forbidden,
+		404: notFound,
+	},
+	security: [{ JWT: [] }],
+};
+
+const updateServiceOrderStatusDoc: FastifySchema = {
+	tags: ["Service Orders"],
+	summary: "Change a service order's status",
+	description: `Moves the order to another status: ${serviceOrderStatuses.options.join(", ")}.`,
+	params: serviceOrderParamsSchema,
+	body: updateServiceOrderStatusSchema,
+	response: {
+		200: zodResponseSchema({
+			status: 200,
+			error: null,
+			code: "update_service_order_status_success",
+			message: "Service order status updated.",
+			data: z.object({ id: z.string(), status: serviceOrderStatuses }),
+		}).describe("Status changed."),
+		403: forbidden,
+		404: notFound,
+	},
+	security: [{ JWT: [] }],
+};
+
 const getCompanyServiceOrdersSchema: FastifySchema = {
 	tags: ["Service Orders"],
 	summary: "List service orders",
@@ -48,7 +131,7 @@ Optional filters (query string):
 - \`employeeId\`: responsible employee (cuid2)
 - \`status\`: one of: ${serviceOrderStatuses.options.join(", ")}
 - \`dateFrom\` / \`dateTo\`: filter by \`created_at\` (inclusive; ISO date or datetime)
-- \`query\`: search in device model, reported defect, or client name
+- \`query\`: search in model, reference number, reported defect, brand, customer name or DNI
 - \`page\`, \`perPage\`, \`sort\` (\`newer\` | \`older\`): pagination (see API pagination docs)
 `,
 	params: getCompanyNestedDataSchema,
@@ -68,13 +151,7 @@ Optional filters (query string):
 			message: "The requested page exceeds the total number of pages.",
 			data: null,
 		}).describe("Requested page exceeds total pages."),
-		403: zodResponseSchema({
-			status: 403,
-			error: "Forbidden",
-			code: "not_allowed",
-			message: "You are not authorized to access this company.",
-			data: null,
-		}).describe("Not allowed to access this company."),
+		403: forbidden,
 		404: zodResponseSchema({
 			status: 404,
 			error: "Not Found",
@@ -173,5 +250,7 @@ Rules:
 
 export const serviceOrdersDocs = {
 	getCompanyServiceOrdersSchema,
+	getServiceOrderSchema,
+	updateServiceOrderStatusSchema: updateServiceOrderStatusDoc,
 	createServiceOrderSchema: createServiceOrderSchemaDoc,
 };
