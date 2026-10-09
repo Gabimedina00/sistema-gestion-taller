@@ -7,8 +7,8 @@ import {
 import type { z } from "zod";
 import { companiesDocs } from "../../../core/docs/companies/companies.docs";
 import type { FastifyTypedInstance } from "../../../core/interfaces/fastify";
-import { authenticateAdmin } from "../../../core/middlewares/authenticate-admin";
 import { authenticateEmployee } from "../../../core/middlewares/authenticate-employee";
+import { authenticateSetupKey } from "../../../core/middlewares/authenticate-setup-key";
 import { requirePermission } from "../../../core/middlewares/rbac";
 import { withErrorHandler } from "../../../core/middlewares/with-error-handler";
 import { CompaniesController } from "../controllers";
@@ -57,7 +57,7 @@ export function companiesRoutes(fastify: FastifyTypedInstance) {
 	fastify.post(
 		"/",
 		{
-			preHandler: [authenticateAdmin],
+			preHandler: [authenticateSetupKey],
 			schema: companiesDocs.createCompanySchema,
 		},
 		withErrorHandler(async (request, response) => {

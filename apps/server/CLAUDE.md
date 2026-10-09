@@ -2,7 +2,7 @@ Local context for `apps/server`. Read the root `AGENTS.md` first — this only c
 
 ## Stack
 
-Fastify + `fastify-type-provider-zod` (Zod is the source of truth for both validation and OpenAPI schema generation — don't hand-write JSON schema). Drizzle ORM over MySQL, Redis, BullMQ-adjacent (actual job processing lives in `apps/workers`), Cloudflare R2 for uploads (`@aws-sdk/client-s3`), Clerk for the admin-facing endpoints that need it.
+Fastify + `fastify-type-provider-zod` (Zod is the source of truth for both validation and OpenAPI schema generation — don't hand-write JSON schema). Drizzle ORM over MySQL, Redis, BullMQ-adjacent (actual job processing lives in `apps/workers`), Cloudflare R2 for uploads (`@aws-sdk/client-s3`) and a `SETUP_KEY` bearer check (`core/middlewares/authenticate-setup-key.ts`) for one-off setup routes.
 
 ## Adding a route
 
