@@ -1,5 +1,3 @@
-import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { db } from "@fixr/db/connection";
 import { uploads } from "@fixr/db/schema";
 import type { uploadPurpose } from "@fixr/schemas/uploads";
@@ -9,10 +7,9 @@ import {
 	buildModelObjectKey,
 	buildObjectPublicUrl,
 	buildUploadObjectKey,
-	r2Bucket,
-	r2Client,
-	r2PresignExpiresIn,
-} from "../../../config/r2";
+	buildUploadUrl,
+	uploadUrlExpiresIn,
+} from "../../../config/storage";
 
 type ApiPurpose = z.infer<typeof uploadPurpose>;
 
@@ -59,16 +56,7 @@ export class UploadsRepository {
 		const key = buildKey({ userId, companyId, fileName });
 		const url = `${buildObjectPublicUrl(key)}${purpose === "avatar" ? `?v=${Date.now()}` : ""}`;
 
-		const command = new PutObjectCommand({
-			Bucket: r2Bucket,
-			Key: key,
-			ContentType: contentType,
-			ContentLength: size,
-		});
-
-		const uploadUrl = await getSignedUrl(r2Client, command, {
-			expiresIn: r2PresignExpiresIn,
-		});
+		const uploadUrl = buildUploadUrl({ key, contentType, size });
 
 		const [record] = await db
 			.insert(uploads)
@@ -90,7 +78,7 @@ export class UploadsRepository {
 			uploadUrl,
 			key,
 			url,
-			expiresIn: r2PresignExpiresIn,
+			expiresIn: uploadUrlExpiresIn,
 		};
 	}
 }

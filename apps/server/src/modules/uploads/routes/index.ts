@@ -2,7 +2,9 @@ import { permissions } from "@fixr/permissions";
 import type { userJWT } from "@fixr/schemas/auth";
 import {
 	createUploadPresignSchema,
+	MAX_UPLOAD_SIZE_BYTES,
 	presignParamsSchema,
+	uploadFileQuerySchema,
 } from "@fixr/schemas/uploads";
 import type { z } from "zod";
 import { uploadsDocs } from "../../../core/docs/uploads.docs";
@@ -46,6 +48,35 @@ export function uploadsRoutes(fastify: FastifyTypedInstance) {
 				data: body,
 				userId: userJwt.id,
 				companyId: userJwt.company?.id,
+				response,
+			});
+		})
+	);
+
+	// Upload links send the raw file (image/webp, image/jpeg...) as the body
+	fastify.addContentTypeParser(
+		"*",
+		{ parseAs: "buffer", bodyLimit: MAX_UPLOAD_SIZE_BYTES },
+		(_request, body, done) => {
+			done(null, body);
+		}
+	);
+
+	fastify.put(
+		"/files/*",
+		{
+			bodyLimit: MAX_UPLOAD_SIZE_BYTES,
+			schema: uploadsDocs.uploadFileSchema,
+		},
+		withErrorHandler(async (request, response) => {
+			const { "*": key } = request.params as { "*": string };
+			const query = uploadFileQuerySchema.parse(request.query);
+
+			await UploadsController.storeUploadedFile({
+				key,
+				query,
+				contentType: request.headers["content-type"] ?? "",
+				body: Buffer.isBuffer(request.body) ? request.body : Buffer.alloc(0),
 				response,
 			});
 		})

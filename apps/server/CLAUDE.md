@@ -2,7 +2,7 @@ Local context for `apps/server`. Read the root `AGENTS.md` first — this only c
 
 ## Stack
 
-Fastify + `fastify-type-provider-zod` (Zod is the source of truth for both validation and OpenAPI schema generation — don't hand-write JSON schema). Drizzle ORM over MySQL, Redis, BullMQ-adjacent (actual job processing lives in `apps/workers`), Cloudflare R2 for uploads (`@aws-sdk/client-s3`) and a `SETUP_KEY` bearer check (`core/middlewares/authenticate-setup-key.ts`) for one-off setup routes.
+Fastify + `fastify-type-provider-zod` (Zod is the source of truth for both validation and OpenAPI schema generation — don't hand-write JSON schema). Drizzle ORM over MySQL, Redis, BullMQ-adjacent (actual job processing lives in `apps/workers`), uploads stored on the server's disk (`config/storage.ts`, served under `/files/`) and a `SETUP_KEY` bearer check (`core/middlewares/authenticate-setup-key.ts`) for one-off setup routes.
 
 ## Adding a route
 
@@ -24,6 +24,6 @@ Central error handling in `server.ts` has three layers, in this order: `ZodError
 
 ## Don't
 
-- Don't add new S3/R2 upload logic outside `modules/uploads` and `core/lib/r2.ts` — there's already a purpose-based presign pattern to extend.
+- Don't add new upload logic outside `modules/uploads`, `config/storage.ts` and `core/lib/storage-keys.ts` — there's already a purpose-based signed-link pattern to extend.
 - Don't call `db` directly from a controller or route — always through a repository.
 - Don't skip the `core/docs/*.docs.ts` entry for a new route; the OpenAPI spec is generated from it and consumed by `/docs`.

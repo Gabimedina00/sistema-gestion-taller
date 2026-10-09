@@ -566,7 +566,7 @@ export class ModelsService {
 		}
 
 		if (image.key) {
-			await ModelsRepository.deleteR2Object(image.key);
+			await ModelsRepository.deleteStoredObject(image.key);
 		}
 		await ModelsRepository.deleteModelImageRecord(imageId);
 

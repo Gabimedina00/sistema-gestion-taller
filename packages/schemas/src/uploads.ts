@@ -38,6 +38,14 @@ export const uploadPresignResponseSchema = z.object({
 	expiresIn: z.number().int().positive(),
 });
 
+/** @description Query string of an upload link issued by the presign endpoint */
+export const uploadFileQuerySchema = z.object({
+	ct: z.string().min(1),
+	size: z.coerce.number().int().positive().max(MAX_UPLOAD_SIZE_BYTES),
+	exp: z.coerce.number().int().positive(),
+	sig: z.string().min(1),
+});
+
 export const createAvatarUploadPresignSchema = createUploadPresignSchema.extend(
 	{
 		size: z

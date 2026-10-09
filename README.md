@@ -54,7 +54,7 @@ Hace falta [Docker](https://docs.docker.com/get-docker/) instalado.
 
 Para usarlo desde otra compu o celular del local, poné la IP de la máquina que corre Docker en `PUBLIC_APP_URL` y `PUBLIC_API_URL` y volvé a correr el paso 2.
 
-Para apagarlo: `docker compose down`. Los datos quedan guardados.
+Para apagarlo: `docker compose down`. Los datos quedan guardados: la base de datos en el volumen `mysql` y las fotos de los relojes en el volumen `uploads`. Conviene hacer copia de seguridad de los dos.
 
 ## Para desarrollar
 

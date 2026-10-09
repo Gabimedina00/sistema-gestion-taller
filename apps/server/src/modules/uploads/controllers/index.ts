@@ -1,5 +1,6 @@
 import type {
 	createUploadPresignSchema,
+	uploadFileQuerySchema,
 	uploadPurpose,
 } from "@fixr/schemas/uploads";
 import type { FastifyReply } from "fastify";
@@ -27,5 +28,15 @@ export class UploadsController {
 			companyId,
 			response,
 		});
+	}
+
+	static storeUploadedFile(params: {
+		key: string;
+		query: z.infer<typeof uploadFileQuerySchema>;
+		contentType: string;
+		body: Buffer;
+		response: FastifyReply;
+	}) {
+		return UploadsService.storeUploadedFile(params);
 	}
 }

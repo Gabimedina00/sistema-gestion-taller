@@ -25,6 +25,7 @@ import {
 } from "fastify-type-provider-zod";
 import { ZodError, z } from "zod";
 import { cookieKey } from "./../../../packages/constants/src/cookies";
+import { uploadsDir } from "./config/storage";
 import { apiDescription } from "./core/docs/main";
 import { AppError } from "./core/lib/app-error";
 import { apiResponse } from "./core/lib/response";
@@ -116,6 +117,10 @@ server.setErrorHandler((error, request, response) => {
 			})
 		);
 	}
+
+	// Anything else (e.g. 403 from the static file server, 413 for a body that's
+	// too large) falls back to Fastify's default reply instead of hanging
+	return response.send(error);
 });
 
 async function registerPlugins() {
@@ -157,7 +162,8 @@ async function registerPlugins() {
 				},
 				{
 					name: "Uploads",
-					description: "Pre-signed uploads to Cloudflare R2.",
+					description:
+						"Signed upload links; files are stored on the server disk.",
 				},
 				{
 					name: "Devices",
@@ -200,6 +206,13 @@ async function registerPlugins() {
 	await server.register(fastifyStatic, {
 		root: join(cwd(), "public"),
 		prefix: "/public/",
+	});
+
+	// Photos uploaded through upload links, stored on this server's disk
+	await server.register(fastifyStatic, {
+		root: uploadsDir,
+		prefix: "/files/",
+		decorateReply: false,
 	});
 
 	await server.register(healthRoutes);

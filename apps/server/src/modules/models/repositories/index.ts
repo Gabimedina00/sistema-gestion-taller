@@ -1,4 +1,3 @@
-import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import {
 	and,
 	asc,
@@ -18,11 +17,7 @@ import {
 	models,
 	uploads,
 } from "@fixr/db/schema";
-import {
-	generatePresignedGetUrl,
-	r2Bucket,
-	r2Client,
-} from "../../../config/r2";
+import { buildObjectPublicUrl, deleteObject } from "../../../config/storage";
 import { Cached, InvalidateCache } from "../../../shared/infra/cache";
 
 const FTS_OPERATOR_REGEX = /[+\-*~()<>@]/;
@@ -290,32 +285,29 @@ export class ModelsRepository {
 	}
 
 	/**
-	 * Generate a presigned GET URL for an R2 key
+	 * Build the URL of a stored image (photos are served by this API)
 	 *
-	 * @param key - The R2 object key
-	 * @returns Presigned URL or null
+	 * @param key - The storage key
+	 * @returns Image URL or null
 	 */
-	static async generateImagePresignedUrl(key: string | null) {
-		if (!key) return null;
-		return await generatePresignedGetUrl(key);
+	static generateImagePresignedUrl(key: string | null) {
+		return Promise.resolve(key ? buildObjectPublicUrl(key) : null);
 	}
 
 	/**
-	 * Attach presigned GET URLs to an array of model images
+	 * Attach image URLs to an array of model images
 	 *
 	 * @param images - Array of model image records
 	 * @returns Images with presignedUrl attached
 	 */
-	static async attachPresignedUrlsToImages(
+	static attachPresignedUrlsToImages(
 		images: (ModelImageSelect & { key: string | null })[]
 	): Promise<(ModelImageSelect & { presignedUrl: string | null })[]> {
-		return await Promise.all(
-			images.map(async (img) => {
-				const presignedUrl = img.key
-					? await generatePresignedGetUrl(img.key)
-					: null;
-				return { ...img, presignedUrl };
-			})
+		return Promise.resolve(
+			images.map((img) => ({
+				...img,
+				presignedUrl: img.key ? buildObjectPublicUrl(img.key) : null,
+			}))
 		);
 	}
 
@@ -473,10 +465,10 @@ export class ModelsRepository {
 	}
 
 	/**
-	 * Get all R2 keys associated with a model
+	 * Get all storage keys associated with a model
 	 *
 	 * @param modelId - The model ID
-	 * @returns Array of R2 keys
+	 * @returns Array of storage keys
 	 */
 	static async queryUploadKeysByModel(modelId: string) {
 		const rows = await db
@@ -489,17 +481,12 @@ export class ModelsRepository {
 	}
 
 	/**
-	 * Delete an R2 object by key
+	 * Delete a stored file by key
 	 *
-	 * @param key - The R2 object key
+	 * @param key - The storage key
 	 */
-	static async deleteR2Object(key: string) {
-		await r2Client.send(
-			new DeleteObjectCommand({
-				Bucket: r2Bucket,
-				Key: key,
-			})
-		);
+	static async deleteStoredObject(key: string) {
+		await deleteObject(key);
 	}
 
 	/**
@@ -524,7 +511,7 @@ export class ModelsRepository {
 	@InvalidateCache({ patterns: ["models:*"] })
 	static async deleteModel(id: string) {
 		const keys = await ModelsRepository.queryUploadKeysByModel(id);
-		await Promise.all(keys.map((k) => ModelsRepository.deleteR2Object(k)));
+		await Promise.all(keys.map((k) => ModelsRepository.deleteStoredObject(k)));
 		await db.delete(modelImages).where(eq(modelImages.modelId, id));
 		await db.delete(models).where(eq(models.id, id));
 	}
