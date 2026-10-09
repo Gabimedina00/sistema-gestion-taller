@@ -1,7 +1,7 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
-import { resend } from "../config/resend";
+import { mailFrom, transport } from "../config/transport";
 import { renderEmail as renderDeletionEmail } from "../emails/account-deletion";
 import {
 	type EmailProps as InviteEmailProps,
@@ -28,21 +28,23 @@ const sendEmail = async ({
 	html: string;
 	subject: string;
 }) => {
+	if (!transport) {
+		console.log(
+			`SMTP_HOST is not set, email to ${to} was not sent. Subject: ${subject}`
+		);
+		return null;
+	}
+
 	try {
-		const { data, error } = await resend.emails.send({
-			from: "Fixr - Comunicação <no-reply@mail.fixr.com.br>",
-			to: [to],
+		const info = await transport.sendMail({
+			from: mailFrom,
+			to,
 			subject,
 			html,
 		});
 
-		if (error) {
-			console.error(`Failed to send email to ${to}:`, error);
-			throw error;
-		}
-
-		console.log(`Email sent to ${to}: ${data?.id}`);
-		return data;
+		console.log(`Email sent to ${to}: ${info.messageId}`);
+		return info;
 	} catch (error) {
 		console.error(`Failed to send email to ${to}:`, error);
 		throw error;
@@ -57,7 +59,7 @@ export const sendInviteEmail = async ({
 	sendEmail({
 		to,
 		appName,
-		subject: "🎉 Bem-vindo ao Fixr – Seu acesso ao sistema",
+		subject: `Your access to ${appName}`,
 		html: await renderInviteEmail({
 			appName,
 			...props,
@@ -90,7 +92,7 @@ export const sendAccountDeletionEmail = async ({
 	sendEmail({
 		to,
 		appName,
-		subject: `${displayName}'s account delete confirmation.`,
+		subject: `Confirm deleting your account, ${displayName}`,
 		html: await renderDeletionEmail({ verificationUrl, displayName, appName }),
 	});
 
@@ -103,7 +105,7 @@ export const sendPasswordResetEmail = async ({
 	sendEmail({
 		to,
 		appName,
-		subject: `Esqueceu sua senha, ${displayName}?`,
+		subject: `Reset your password, ${displayName}`,
 		html: await renderPasswordResetEmail({
 			verificationUrl,
 			displayName,

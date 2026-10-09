@@ -52,6 +52,8 @@ Hace falta [Docker](https://docs.docker.com/get-docker/) instalado.
 
 4. Entrá a `http://localhost:3000` con ese email y contraseña.
 
+Para que el sistema mande emails (invitaciones a empleados, recuperar contraseña) completá las variables `SMTP_*` del `.env` con cualquier casilla de correo. Con Gmail: `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=587`, tu dirección en `SMTP_USER` y una [contraseña de aplicación](https://myaccount.google.com/apppasswords) en `SMTP_PASSWORD`. Si lo dejás vacío, la app funciona igual y los emails solo se anotan en el log de `workers` (`docker compose logs workers`).
+
 Para usarlo desde otra compu o celular del local, poné la IP de la máquina que corre Docker en `PUBLIC_APP_URL` y `PUBLIC_API_URL` y volvé a correr el paso 2.
 
 Para apagarlo: `docker compose down`. Los datos quedan guardados: la base de datos en el volumen `mysql` y las fotos de los relojes en el volumen `uploads`. Conviene hacer copia de seguridad de los dos.

@@ -2,7 +2,7 @@ Local context for `apps/workers`. Read the root `AGENTS.md` first — this only 
 
 ## Stack
 
-BullMQ processors over Redis (`ioredis`). `src/index.ts` boots the worker(s); `src/workers/*.ts` holds one file per queue/processor (e.g. `email-worker.ts`, which consumes `@fixr/mail` templates and sends via Resend/nodemailer).
+BullMQ processors over Redis (`ioredis`). `src/index.ts` boots the worker(s); `src/workers/*.ts` holds one file per queue/processor (e.g. `email-worker.ts`, which consumes `@fixr/mail` templates and sends over SMTP with nodemailer (`packages/mail/config/transport.ts`)).
 
 ## Adding a worker
 
