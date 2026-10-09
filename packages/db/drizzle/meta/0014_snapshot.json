@@ -1,8 +1,8 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "5b30a0e8-ed0e-4d9b-a838-79555a7c53e2",
-  "prevId": "856b506c-8832-4bda-b4f1-a193933c1a20",
+  "id": "22d61af4-528f-412e-a27d-5e88a2a65cbe",
+  "prevId": "5b30a0e8-ed0e-4d9b-a838-79555a7c53e2",
   "tables": {
     "clients": {
       "name": "clients",
@@ -21,8 +21,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "cpf": {
-          "name": "cpf",
+        "dni": {
+          "name": "dni",
           "type": "varchar(11)",
           "primaryKey": false,
           "notNull": true,
@@ -70,9 +70,9 @@
         }
       },
       "uniqueConstraints": {
-        "clients_cpf_unique": {
-          "name": "clients_cpf_unique",
-          "columns": ["cpf"]
+        "clients_dni_unique": {
+          "name": "clients_dni_unique",
+          "columns": ["dni"]
         }
       },
       "checkConstraint": {}
@@ -94,9 +94,9 @@
           "notNull": true,
           "autoincrement": false
         },
-        "cnpj": {
-          "name": "cnpj",
-          "type": "varchar(14)",
+        "cuit": {
+          "name": "cuit",
+          "type": "varchar(11)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -133,9 +133,9 @@
         }
       },
       "uniqueConstraints": {
-        "companies_cnpj_unique": {
-          "name": "companies_cnpj_unique",
-          "columns": ["cnpj"]
+        "companies_cuit_unique": {
+          "name": "companies_cuit_unique",
+          "columns": ["cuit"]
         },
         "companies_subdomain_unique": {
           "name": "companies_subdomain_unique",
@@ -227,8 +227,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "cpf": {
-          "name": "cpf",
+        "dni": {
+          "name": "dni",
           "type": "varchar(11)",
           "primaryKey": false,
           "notNull": true,
@@ -299,9 +299,9 @@
         }
       },
       "uniqueConstraints": {
-        "employees_cpf_unique": {
-          "name": "employees_cpf_unique",
-          "columns": ["cpf"]
+        "employees_dni_unique": {
+          "name": "employees_dni_unique",
+          "columns": ["dni"]
         }
       },
       "checkConstraint": {}
@@ -1470,7 +1470,11 @@
   "_meta": {
     "schemas": {},
     "tables": {},
-    "columns": {}
+    "columns": {
+      "\"clients\".\"cpf\"": "\"clients\".\"dni\"",
+      "\"companies\".\"cnpj\"": "\"companies\".\"cuit\"",
+      "\"employees\".\"cpf\"": "\"employees\".\"dni\""
+    }
   },
   "internal": {
     "tables": {},
