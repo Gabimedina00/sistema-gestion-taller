@@ -3,7 +3,7 @@
 import { REPAIR_STATUSES } from "@fixr/constants/watches";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Loader2, Plus } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,9 +57,16 @@ function useDebounced<T>(value: T, delay: number) {
 
 export function ServiceOrdersTable({ subdomain }: { subdomain: string }) {
 	const router = useRouter();
+	const searchParams = useSearchParams();
 	const [page, setPage] = useState(1);
 	const [search, setSearch] = useState("");
-	const [status, setStatus] = useState<ServiceOrderStatus | undefined>();
+	// The home page links here with ?status=ready and so on
+	const [status, setStatus] = useState<ServiceOrderStatus | undefined>(() => {
+		const fromUrl = searchParams.get("status");
+		return fromUrl && fromUrl in REPAIR_STATUSES
+			? (fromUrl as ServiceOrderStatus)
+			: undefined;
+	});
 	const query = useDebounced(search.trim(), SEARCH_DELAY_MS);
 
 	const orders = useQuery({

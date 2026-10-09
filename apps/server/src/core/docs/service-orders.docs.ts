@@ -8,7 +8,9 @@ import {
 	getServiceOrdersQuerySchema,
 	serviceOrderDetailsSchema,
 	serviceOrderParamsSchema,
+	serviceOrderStatusCountsSchema,
 	serviceOrderStatuses,
+	updateServiceOrderSchema,
 	updateServiceOrderStatusSchema,
 } from "@fixr/schemas/service-orders";
 import { paginatedDataSchema } from "@fixr/schemas/utils";
@@ -94,6 +96,46 @@ const getServiceOrderSchema: FastifySchema = {
 			message: "Service order retrieved successfully.",
 			data: serviceOrderDetailsSchema,
 		}).describe("Service order found."),
+		403: forbidden,
+		404: notFound,
+	},
+	security: [{ JWT: [] }],
+};
+
+const updateServiceOrderDoc: FastifySchema = {
+	tags: ["Service Orders"],
+	summary: "Edit a service order",
+	description:
+		"Changes the watch details, intake notes or quote after the order was created. Fields left out stay as they are; `null` clears an optional field.",
+	params: serviceOrderParamsSchema,
+	body: updateServiceOrderSchema,
+	response: {
+		200: zodResponseSchema({
+			status: 200,
+			error: null,
+			code: "update_service_order_success",
+			message: "Service order updated.",
+			data: z.object({ id: z.string() }),
+		}).describe("Order updated."),
+		403: forbidden,
+		404: notFound,
+	},
+	security: [{ JWT: [] }],
+};
+
+const getStatusCountsSchema: FastifySchema = {
+	tags: ["Service Orders"],
+	summary: "Count service orders by status",
+	description: "How many of the company's orders are in each status.",
+	params: getCompanyNestedDataSchema,
+	response: {
+		200: zodResponseSchema({
+			status: 200,
+			error: null,
+			code: "get_service_order_status_counts_success",
+			message: "Service order counts retrieved.",
+			data: serviceOrderStatusCountsSchema,
+		}).describe("Counts per status."),
 		403: forbidden,
 		404: notFound,
 	},
@@ -252,5 +294,7 @@ export const serviceOrdersDocs = {
 	getCompanyServiceOrdersSchema,
 	getServiceOrderSchema,
 	updateServiceOrderStatusSchema: updateServiceOrderStatusDoc,
+	updateServiceOrderSchema: updateServiceOrderDoc,
+	getStatusCountsSchema,
 	createServiceOrderSchema: createServiceOrderSchemaDoc,
 };

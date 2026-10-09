@@ -228,3 +228,38 @@ export const serviceOrderDetailsSchema = serviceOrderListItemSchema.extend({
 		})
 	),
 });
+
+/** @description What can be changed after intake, e.g. the quote once the watch is checked */
+export const updateServiceOrderSchema = watchDetailsSchema
+	.pick({
+		referenceNumber: true,
+		serialNumber: true,
+		movementType: true,
+		caliber: true,
+		requestedServices: true,
+		intakeCondition: true,
+		estimatedCost: true,
+		estimatedDeliveryDate: true,
+		warrantyDays: true,
+	})
+	.extend({
+		deviceModel: z
+			.string()
+			.min(1, { message: "Model is required." })
+			.max(100, { message: "Model is too long (max 100)." }),
+		reportedDefect: z
+			.string()
+			.min(1, { message: "Describe the problem the customer reports." })
+			.max(65_535, { message: "Reported issue is too long." }),
+		observations: z
+			.string()
+			.max(65_535, { message: "Notes are too long." })
+			.nullable(),
+	})
+	.partial();
+
+/** @description How many orders are in each status */
+export const serviceOrderStatusCountsSchema = z.record(
+	serviceOrderStatuses,
+	z.number()
+);

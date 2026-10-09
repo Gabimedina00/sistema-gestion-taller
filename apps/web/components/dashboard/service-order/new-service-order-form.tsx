@@ -44,6 +44,7 @@ import {
 	SheetTrigger,
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
+import { toDateOnly } from "@/lib/dates";
 import { type Client, findClientByDni } from "@/lib/services/clients";
 import {
 	createServiceOrder,
@@ -52,6 +53,7 @@ import {
 } from "@/lib/services/service-orders";
 import { cn } from "@/lib/utils";
 import { NewClientForm } from "../clients/new-client-form";
+import { ToggleChips } from "./toggle-chips";
 import { WatchBrandField } from "./watch-brand-field";
 
 type FormInput = z.input<typeof createOrderServiceSchema>;
@@ -66,11 +68,6 @@ const clientByDniQueryKey = (subdomain: string, dni: string) => [
 	dni,
 ];
 
-/** @description YYYY-MM-DD, the format the API expects for dates without time */
-function toDateOnly(date: Date) {
-	return date.toISOString().slice(0, 10);
-}
-
 function fileToDataUrl(file: File): Promise<string> {
 	return new Promise((resolve, reject) => {
 		const reader = new FileReader();
@@ -81,44 +78,6 @@ function fileToDataUrl(file: File): Promise<string> {
 }
 function getFilePreviewKey(file: File): string {
 	return `${file.name}-${file.size}-${file.lastModified}`;
-}
-
-function toggleValue<T extends string>(values: T[], value: T): T[] {
-	return values.includes(value)
-		? values.filter((current) => current !== value)
-		: [...values, value];
-}
-
-/** @description Pill-style multi select, easier to tap on the shop counter than checkboxes */
-function ToggleChips<T extends string>({
-	options,
-	value,
-	onChange,
-}: {
-	options: Record<T, { id: T; label: string }>;
-	value: T[];
-	onChange: (value: T[]) => void;
-}) {
-	return (
-		<div className="flex flex-wrap gap-2">
-			{(Object.values(options) as { id: T; label: string }[]).map((option) => {
-				const selected = value.includes(option.id);
-				return (
-					<Button
-						aria-pressed={selected}
-						key={option.id}
-						onClick={() => onChange(toggleValue(value, option.id))}
-						size="sm"
-						type="button"
-						variant={selected ? "default" : "outline"}
-					>
-						{selected && <Check className="size-3.5" />}
-						{option.label}
-					</Button>
-				);
-			})}
-		</div>
-	);
 }
 
 /** @description Shows who the typed DNI belongs to, so the counter knows if the customer is new */
