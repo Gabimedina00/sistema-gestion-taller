@@ -1,5 +1,6 @@
 import {
 	and,
+	asc,
 	db,
 	eq,
 	gte,
@@ -21,6 +22,7 @@ import {
 import type {
 	createServiceOrderMockSchema,
 	getServiceOrdersQuerySchema,
+	serviceOrderStatuses,
 } from "@fixr/schemas/service-orders";
 import type { z } from "zod";
 import { Cached, InvalidateCache } from "../../../shared/infra/cache";
@@ -55,7 +57,12 @@ export const serviceOrdersListSelect = {
 	status: serviceOrders.status,
 	createdAt: serviceOrders.createdAt,
 	updatedAt: serviceOrders.updatedAt,
-	client: { id: clients.id, name: clients.name },
+	client: {
+		id: clients.id,
+		name: clients.name,
+		dni: clients.dni,
+		phone: clients.phone,
+	},
 	employee: { id: employees.id, name: employees.name },
 	deviceCategory: { id: modelCategories.id, name: modelCategories.name },
 	deviceMaker: { id: modelMakers.id, name: modelMakers.name },
@@ -160,13 +167,66 @@ export class ServiceOrdersRepository {
 			conditions.push(
 				or(
 					like(serviceOrders.deviceModel, `%${filters.query}%`),
+					like(serviceOrders.referenceNumber, `%${filters.query}%`),
 					like(serviceOrders.reportedDefect, `%${filters.query}%`),
-					like(clients.name, `%${filters.query}%`)
+					like(clients.name, `%${filters.query}%`),
+					like(clients.dni, `%${filters.query}%`),
+					like(modelMakers.name, `%${filters.query}%`)
 				)!
 			);
 		}
 
 		return and(...conditions);
+	}
+
+	static async queryById(companyId: string, id: string) {
+		const [order] = await db
+			.select({
+				...serviceOrdersListSelect,
+				client: {
+					...serviceOrdersListSelect.client,
+					email: clients.email,
+				},
+			})
+			.from(serviceOrders)
+			.innerJoin(clients, eq(clients.id, serviceOrders.clientId))
+			.innerJoin(employees, eq(employees.id, serviceOrders.employeeId))
+			.innerJoin(
+				modelCategories,
+				eq(modelCategories.id, serviceOrders.deviceCategoryId)
+			)
+			.innerJoin(modelMakers, eq(modelMakers.id, serviceOrders.deviceMakerId))
+			.where(
+				and(eq(serviceOrders.id, id), eq(serviceOrders.companyId, companyId))
+			)
+			.limit(1);
+
+		if (!order) {
+			return null;
+		}
+
+		const photos = await db
+			.select({
+				id: serviceOrderImages.id,
+				url: uploads.url,
+				description: serviceOrderImages.description,
+			})
+			.from(serviceOrderImages)
+			.innerJoin(uploads, eq(uploads.id, serviceOrderImages.uploadId))
+			.where(eq(serviceOrderImages.serviceOrderId, id))
+			.orderBy(asc(serviceOrderImages.createdAt));
+
+		return { ...order, photos };
+	}
+
+	static async updateStatus(
+		id: string,
+		status: z.infer<typeof serviceOrderStatuses>
+	) {
+		await db
+			.update(serviceOrders)
+			.set({ status })
+			.where(eq(serviceOrders.id, id));
 	}
 
 	@InvalidateCache({ patterns: ["service-orders:*"] })

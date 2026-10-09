@@ -90,3 +90,22 @@ export const WATCH_CATEGORY_SLUG = "watches";
 
 /** @description Default warranty, in days, given on a repair. */
 export const DEFAULT_WATCH_WARRANTY_DAYS = 90;
+
+/**
+ * @description Labels for each step of a repair, in order.
+ * Ids match `serviceOrderStatuses` in `@fixr/schemas/service-orders`.
+ */
+export const REPAIR_STATUSES = {
+	pending: { id: "pending", label: "Received" },
+	diagnosing: { id: "diagnosing", label: "Checking" },
+	waiting_approval: {
+		id: "waiting_approval",
+		label: "Waiting for customer OK",
+	},
+	approved: { id: "approved", label: "Approved" },
+	fixing: { id: "fixing", label: "Repairing" },
+	ready: { id: "ready", label: "Ready for pickup" },
+	delivered: { id: "delivered", label: "Delivered" },
+} as const;
+
+export type RepairStatus = keyof typeof REPAIR_STATUSES;

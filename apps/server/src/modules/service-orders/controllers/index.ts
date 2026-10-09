@@ -2,6 +2,7 @@ import type { jwtPayload } from "@fixr/schemas/auth";
 import type {
 	createServiceOrderMockSchema,
 	getServiceOrdersQuerySchema,
+	serviceOrderStatuses,
 } from "@fixr/schemas/service-orders";
 import type { FastifyReply } from "fastify";
 import type { z } from "zod";
@@ -9,6 +10,25 @@ import { ServiceOrdersService } from "../services";
 
 /** @description Service orders request handlers */
 export class ServiceOrdersController {
+	static getServiceOrder(args: {
+		userJwt: z.infer<typeof jwtPayload>;
+		subdomain: string;
+		id: string;
+		response: FastifyReply;
+	}) {
+		return ServiceOrdersService.getServiceOrder(args);
+	}
+
+	static updateServiceOrderStatus(args: {
+		userJwt: z.infer<typeof jwtPayload>;
+		subdomain: string;
+		id: string;
+		status: z.infer<typeof serviceOrderStatuses>;
+		response: FastifyReply;
+	}) {
+		return ServiceOrdersService.updateServiceOrderStatus(args);
+	}
+
 	static getCompanyServiceOrders({
 		userJwt,
 		subdomain,

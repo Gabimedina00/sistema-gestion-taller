@@ -13,8 +13,8 @@ export default async function ServiceOrdersPage({
 	return (
 		<div className="space-y-4">
 			<Heading
-				description={"Controle as ordens de serviço de seus clientes"}
-				title={"Ordens de serviço"}
+				description="Every watch in the shop and where its repair stands."
+				title="Repair orders"
 			/>
 
 			<div className="mt-5 rounded-xs">

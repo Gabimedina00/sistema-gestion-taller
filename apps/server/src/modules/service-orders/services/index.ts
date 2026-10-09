@@ -4,6 +4,7 @@ import type { jwtPayload } from "@fixr/schemas/auth";
 import type {
 	createServiceOrderMockSchema,
 	getServiceOrdersQuerySchema,
+	serviceOrderStatuses,
 } from "@fixr/schemas/service-orders";
 import type { FastifyReply } from "fastify";
 import type { z } from "zod";
@@ -19,7 +20,83 @@ import {
 	serviceOrdersListSelect,
 } from "../repositories";
 
+/** @description Returns the company id when the session belongs to `subdomain` */
+function assertCompanyAccess(
+	userJwt: z.infer<typeof jwtPayload>,
+	subdomain: string
+) {
+	if (!userJwt.company) {
+		throw new AppError("SERVICE_ORDER_COMPANY_NOT_FOUND");
+	}
+	if (userJwt.company.subdomain !== subdomain) {
+		throw new AppError("SERVICE_ORDER_NOT_ALLOWED");
+	}
+	return userJwt.company.id;
+}
+
 export class ServiceOrdersService {
+	static async getServiceOrder({
+		userJwt,
+		subdomain,
+		id,
+		response,
+	}: {
+		userJwt: z.infer<typeof jwtPayload>;
+		subdomain: string;
+		id: string;
+		response: FastifyReply;
+	}) {
+		const companyId = assertCompanyAccess(userJwt, subdomain);
+
+		const order = await ServiceOrdersRepository.queryById(companyId, id);
+		if (!order) {
+			throw new AppError("SERVICE_ORDER_NOT_FOUND");
+		}
+
+		return response.status(200).send(
+			apiResponse({
+				status: 200,
+				error: null,
+				code: "get_service_order_success",
+				message: "Service order retrieved successfully.",
+				data: order,
+			})
+		);
+	}
+
+	static async updateServiceOrderStatus({
+		userJwt,
+		subdomain,
+		id,
+		status,
+		response,
+	}: {
+		userJwt: z.infer<typeof jwtPayload>;
+		subdomain: string;
+		id: string;
+		status: z.infer<typeof serviceOrderStatuses>;
+		response: FastifyReply;
+	}) {
+		const companyId = assertCompanyAccess(userJwt, subdomain);
+
+		const order = await ServiceOrdersRepository.queryById(companyId, id);
+		if (!order) {
+			throw new AppError("SERVICE_ORDER_NOT_FOUND");
+		}
+
+		await ServiceOrdersRepository.updateStatus(id, status);
+
+		return response.status(200).send(
+			apiResponse({
+				status: 200,
+				error: null,
+				code: "update_service_order_status_success",
+				message: "Service order status updated.",
+				data: { id, status },
+			})
+		);
+	}
+
 	static async getCompanyServiceOrders({
 		userJwt,
 		subdomain,
