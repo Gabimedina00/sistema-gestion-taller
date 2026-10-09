@@ -32,7 +32,7 @@ O Fixr é um monorepo com Bun workspaces (`apps/server`, `apps/web`, `apps/worke
    cp packages/mail/.env.example packages/mail/.env
    ```
 
-   Os valores de exemplo já funcionam para desenvolvimento local; chaves de serviços externos (Resend, Google OAuth, Cloudflare R2/Turnstile) precisam ser geradas nos respectivos painéis — veja os comentários em cada `.env.example`. As variáveis são validadas com Zod pelo pacote `@fixr/env`; o app não sobe se faltar alguma.
+   Os valores de exemplo já funcionam para desenvolvimento local; chaves de serviços externos (Resend, Google OAuth, Cloudflare Turnstile) precisam ser geradas nos respectivos painéis — veja os comentários em cada `.env.example`. As variáveis são validadas com Zod pelo pacote `@fixr/env`; o app não sobe se faltar alguma.
 
 3. Suba o banco (MySQL) e o Redis via Docker, e rode as migrations:
 

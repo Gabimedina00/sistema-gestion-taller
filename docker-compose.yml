@@ -16,6 +16,7 @@ x-app: &app
     DB_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}
     REDIS_URL: redis://default:${REDIS_PASSWORD}@redis:6379/0
     FRONTEND_URL: ${PUBLIC_APP_URL:-http://localhost:3000}
+    PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:3333}
 
 services:
   mysql:
@@ -56,9 +57,12 @@ services:
 
   server:
     <<: *app
-    command: ["node", "apps/server/dist/server.js"]
+    working_dir: /app/apps/server
+    command: ["node", "dist/server.js"]
     ports:
       - "3333:3333"
+    volumes:
+      - uploads:/app/uploads
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -84,3 +88,4 @@ services:
 volumes:
   mysql:
   redis:
+  uploads:

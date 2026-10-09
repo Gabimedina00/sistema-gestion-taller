@@ -6,7 +6,7 @@ const DUPLICATE_DASHES_REGEX = /-+/g;
 const TRIM_DASHES_REGEX = /^-|-$/g;
 
 /**
- * Sanitize a file name for safe R2 object key usage
+ * Sanitize a file name for safe use in a storage key
  */
 export function sanitizeUploadFileName(fileName: string): string {
 	const baseName = fileName.split(PATH_SEPARATOR_REGEX).pop() ?? fileName;
@@ -20,7 +20,7 @@ export function sanitizeUploadFileName(fileName: string): string {
 }
 
 /**
- * Build the public URL for an R2 object key
+ * Build the public URL for a stored file key
  */
 export function buildObjectPublicUrl(
 	publicBaseUrl: string,
@@ -42,7 +42,7 @@ export function isAllowedCompanyPhotoUrl(
 }
 
 /**
- * Build an R2 object key for a company upload
+ * Build a storage key for a company upload
  */
 export function buildUploadObjectKey({
 	companyId,
@@ -58,7 +58,7 @@ export function buildUploadObjectKey({
 }
 
 /**
- * Build an R2 object key for a model image
+ * Build a storage key for a model image
  */
 export function buildModelObjectKey({
 	companyId,
@@ -74,7 +74,7 @@ export function buildModelObjectKey({
 }
 
 /**
- * Build an R2 object key for a user avatar
+ * Build a storage key for a user avatar
  * Uses a deterministic key so each upload overwrites the previous one
  */
 export function buildAvatarObjectKey({

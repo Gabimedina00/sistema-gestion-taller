@@ -41,32 +41,19 @@ export const env = createEnv({
 			.string()
 			.min(1)
 			.describe("Cloudflare Turnstile secret key"),
-		R2_ACCESS_KEY_ID: z.string().min(1).describe("Cloudflare R2 access key ID"),
-		R2_SECRET_ACCESS_KEY: z
-			.string()
-			.min(1)
-			.describe("Cloudflare R2 secret access key"),
-		R2_BUCKET_URL: z
+		PUBLIC_API_URL: z
 			.url()
-			.describe(
-				"R2 S3 API URL including bucket path (e.g. https://<account>.r2.cloudflarestorage.com/<bucket>)"
-			),
-		R2_PUBLIC_BASE_URL: z
-			.url()
-			.describe(
-				"Public base URL for uploaded objects (R2 public bucket or custom domain, no trailing slash)"
-			),
-		R2_REGION: z
+			.describe("URL where browsers reach this API (used in file and upload links)"),
+		UPLOADS_DIR: z
 			.string()
-			.default("auto")
-			.describe("R2 region (use auto for Cloudflare)"),
-		R2_PRESIGN_EXPIRES_IN: z.coerce
+			.default("./uploads")
+			.describe("Folder where uploaded photos are stored"),
+		UPLOAD_URL_EXPIRES_IN: z.coerce
 			.number()
 			.int()
-			.min(60)
-			.max(3600)
+			.positive()
 			.default(600)
-			.describe("Pre-signed upload URL TTL in seconds"),
+			.describe("Seconds an upload link stays valid"),
 	},
 	runtimeEnv: process.env,
 	emptyStringAsUndefined: true,
