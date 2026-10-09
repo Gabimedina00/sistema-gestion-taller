@@ -8,7 +8,7 @@ export const companies = mysqlTable("companies", {
 		.$defaultFn(() => createId())
 		.primaryKey(),
 	name: varchar("name", { length: 100 }).notNull(),
-	cnpj: varchar("cnpj", { length: 14 }).unique().notNull(),
+	cuit: varchar("cuit", { length: 11 }).unique().notNull(),
 	address: varchar("address", { length: 255 }),
 	subdomain: varchar("subdomain", { length: 32 }).unique().notNull(),
 	createdAt: timestamp("created_at").defaultNow().notNull(),

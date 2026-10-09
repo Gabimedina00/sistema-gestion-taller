@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { documentSchema } from "./documents";
 import { getPaginatedDataSchema } from "./utils";
 
 export const serviceOrderStatuses = z.enum([
@@ -154,7 +155,10 @@ export const getServiceOrdersQuerySchema = getPaginatedDataSchema
 
 /** @description Intake form for a watch repair order (web dashboard) */
 export const createOrderServiceSchema = watchDetailsSchema.extend({
-	customerDocument: z.string().min(1, "Customer ID (DNI) is required."),
+	customerDocument: documentSchema("dni").min(
+		1,
+		"Customer ID (DNI) is required."
+	),
 	brand: z
 		.string()
 		.min(1, "Brand is required.")

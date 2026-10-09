@@ -57,7 +57,7 @@ export function useColumns(subdomain: string): ColumnDef<ServiceOrderRow>[] {
 				),
 				cell: ({ row }) => (
 					<ClientCell
-						cpf={row.original.client.cpf}
+						dni={row.original.client.dni}
 						name={row.original.client.name}
 						phone={row.original.client.phone}
 					/>

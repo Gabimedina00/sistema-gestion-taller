@@ -102,7 +102,7 @@ export function getCards(order: ServiceOrderRow): CardsMap {
 			>
 				<ServiceOrderKeyValueList>
 					<ServiceOrderKeyValueItem label="Nome" value={order.client.name} />
-					<ServiceOrderKeyValueItem label="CPF" value={order.client.cpf} />
+					<ServiceOrderKeyValueItem label="DNI" value={order.client.dni} />
 					<ServiceOrderKeyValueItem
 						label="Telefone"
 						value={order.client.phone}

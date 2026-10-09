@@ -98,8 +98,8 @@ export class CompaniesService {
 		const formatted = {
 			...body,
 			subdomain: body.subdomain.toLowerCase(),
-			cnpj: unmask.cnpj(body.cnpj),
-			owner_cpf: unmask.cpf(body.owner_cpf),
+			cuit: unmask.cuit(body.cuit),
+			owner_dni: unmask.dni(body.owner_dni),
 		};
 
 		const [
@@ -108,18 +108,18 @@ export class CompaniesService {
 			existingEmail,
 			existingSubdomain,
 		] = await Promise.all([
-			CompaniesRepository.queryEmployeeByCpf(formatted.owner_cpf),
-			CompaniesRepository.queryCompanyByCnpj(formatted.cnpj),
+			CompaniesRepository.queryEmployeeByDni(formatted.owner_dni),
+			CompaniesRepository.queryCompanyByCuit(formatted.cuit),
 			CompaniesRepository.queryUserByEmail(formatted.owner_email),
 			CompaniesRepository.queryCompanyBySubdomain(formatted.subdomain),
 		]);
 
 		if (existingEmployee) {
-			throw new AppError("CPF_CONFLICT");
+			throw new AppError("DNI_CONFLICT");
 		}
 
 		if (existingCompany) {
-			throw new AppError("CNPJ_CONFLICT");
+			throw new AppError("CUIT_CONFLICT");
 		}
 
 		if (existingEmail) {

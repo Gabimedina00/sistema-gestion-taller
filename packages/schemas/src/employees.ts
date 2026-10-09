@@ -8,10 +8,13 @@ export const createEmployeeSchema = z.object({
 		.string({ error: "Preencha este campo" })
 		.min(3, { message: "O nome deve ter no mínimo 3 caracteres." })
 		.max(100, { message: "Ops! Nome muito grande..." }),
-	cpf: documentSchema("cpf"),
+	dni: documentSchema("dni"),
 	phone: z
 		.string()
-		.length(11, { message: "Telefone incompleto." })
+		.length(10, {
+			message:
+				"Phone must have 10 digits: area code and number, without 0 or 15.",
+		})
 		.optional()
 		.nullable(),
 	role: employeeRoles,

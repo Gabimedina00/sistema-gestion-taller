@@ -16,14 +16,14 @@ export const companiesErrors = defineErrors({
 		message: "You are not authorized to access this company.",
 		status: 403,
 	},
-	CPF_CONFLICT: {
-		code: "cpf_conflict",
-		message: "CPF is already registered.",
+	DNI_CONFLICT: {
+		code: "dni_conflict",
+		message: "DNI is already registered.",
 		status: 409,
 	},
-	CNPJ_CONFLICT: {
-		code: "cnpj_conflict",
-		message: "CNPJ is already registered.",
+	CUIT_CONFLICT: {
+		code: "cuit_conflict",
+		message: "CUIT is already registered.",
 		status: 409,
 	},
 	EMAIL_ALREADY_EXISTS: {

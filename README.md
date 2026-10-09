@@ -41,14 +41,14 @@ Hace falta [Docker](https://docs.docker.com/get-docker/) instalado.
      -d '{
        "name": "Relojería",
        "subdomain": "relojeria",
-       "cnpj": "11.222.333/0001-81",
-       "owner_cpf": "529.982.247-25",
+       "cuit": "30-71234567-1",
+       "owner_dni": "30123456",
        "owner_email": "dueno@ejemplo.com",
        "owner_password": "UnaClaveSegura123!"
      }'
    ```
 
-   Por ahora la API todavía pide CNPJ y CPF (documentos de Brasil, herencia de Fixr). Los de arriba son números de prueba válidos; se van a reemplazar por CUIT y DNI.
+   Poné el CUIT del local y el DNI del dueño. Los de arriba son números de prueba: el CUIT tiene que tener el dígito verificador correcto o la API lo rechaza.
 
 4. Entrá a `http://localhost:3000` con ese email y contraseña.
 

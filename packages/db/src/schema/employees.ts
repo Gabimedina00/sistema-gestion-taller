@@ -24,7 +24,7 @@ export const employees = mysqlTable("employees", {
 		.$defaultFn(() => createId())
 		.primaryKey(),
 	name: varchar("name", { length: 100 }).notNull(),
-	cpf: varchar("cpf", { length: 11 }).unique().notNull(),
+	dni: varchar("dni", { length: 11 }).unique().notNull(),
 	phone: varchar("phone", { length: 11 }),
 	role: rolesEnum.notNull(),
 	createdAt: timestamp("created_at").defaultNow().notNull(),

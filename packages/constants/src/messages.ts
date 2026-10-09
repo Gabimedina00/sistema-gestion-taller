@@ -8,13 +8,13 @@ export const messages: Record<string, Message> = {
 		title: "Schema inválido",
 		description: "A requisição enviada não pode ser processada.",
 	},
-	cpf_conflict: {
-		title: "CPF já cadastrado",
-		description: "Um funcionário com este CPF já existe.",
+	dni_conflict: {
+		title: "DNI already registered",
+		description: "Someone with this DNI already exists.",
 	},
-	cnpj_conflict: {
-		title: "CNPJ já cadastrado",
-		description: "Uma empresa com este CNPJ já existe.",
+	cuit_conflict: {
+		title: "CUIT already registered",
+		description: "A shop with this CUIT already exists.",
 	},
 	email_already_exists: {
 		title: "Email já cadastrado",

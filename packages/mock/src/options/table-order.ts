@@ -26,7 +26,7 @@ export interface ServiceOrderRow {
 	};
 	client: {
 		name: string;
-		cpf: string;
+		dni: string;
 		phone: string;
 	};
 	orderDetails?: {
@@ -64,7 +64,7 @@ export const mockServiceOrders: ServiceOrderRow[] = [
 		},
 		client: {
 			name: "Maria Aparecida",
-			cpf: "123.456.789-00",
+			dni: "30.123.456",
 			phone: "(11) 99999-9999",
 		},
 		orderDetails: {
@@ -144,7 +144,7 @@ export const mockServiceOrders: ServiceOrderRow[] = [
 		},
 		client: {
 			name: "Carlos Eduardo",
-			cpf: "987.654.321-00",
+			dni: "27.654.321",
 			phone: "(21) 98888-8888",
 		},
 		orderDetails: {
@@ -198,7 +198,7 @@ export const mockServiceOrders: ServiceOrderRow[] = [
 		},
 		client: {
 			name: "Fernanda Lima",
-			cpf: "111.222.333-44",
+			dni: "35.222.333",
 			phone: "(31) 97777-7777",
 		},
 		orderDetails: {
@@ -266,7 +266,7 @@ export const mockServiceOrders: ServiceOrderRow[] = [
 		},
 		client: {
 			name: "Eduardo Pereira",
-			cpf: "555.666.777-88",
+			dni: "18.666.777",
 			phone: "(41) 96666-6666",
 		},
 		orderDetails: {

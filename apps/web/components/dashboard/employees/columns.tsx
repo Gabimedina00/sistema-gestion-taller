@@ -34,7 +34,7 @@ export const dataSchema = employeeSelectSchema.extend({
 });
 
 const REGEXES = {
-	CPF: /(\d{3})(\d{3})(\d{3})(\d{2})/,
+	THOUSANDS: /\B(?=(\d{3})+(?!\d))/g,
 };
 
 export const columns: ColumnDef<z.infer<typeof dataSchema>>[] = [
@@ -79,10 +79,10 @@ export const columns: ColumnDef<z.infer<typeof dataSchema>>[] = [
 		header: "Email",
 	},
 	{
-		accessorKey: "cpf",
-		header: "CPF",
+		accessorKey: "dni",
+		header: "DNI",
 		cell: ({ row }) => {
-			return row.original.cpf.replace(REGEXES.CPF, "$1.$2.$3-$4");
+			return row.original.dni.replace(REGEXES.THOUSANDS, ".");
 		},
 	},
 	// {

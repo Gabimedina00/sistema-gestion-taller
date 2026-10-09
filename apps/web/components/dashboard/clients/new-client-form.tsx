@@ -1,6 +1,6 @@
 "use client";
 
-import { cpf, phone, unmask } from "@fixr/constants/masks";
+import { dni, phone, unmask } from "@fixr/constants/masks";
 import { createClientSchema } from "@fixr/schemas/clients";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMaskito } from "@maskito/react";
@@ -36,7 +36,7 @@ export function NewClientForm({
 	className,
 	...props
 }: {
-	onCustomerCreated: (cpf: string) => void;
+	onCustomerCreated: (dni: string) => void;
 	cols?: number;
 } & ComponentPropsWithoutRef<"form">) {
 	const [loading, setLoading] = useState(false);
@@ -46,17 +46,17 @@ export function NewClientForm({
 		defaultValues: {
 			name: "",
 			email: "",
-			cpf: "",
+			dni: "",
 			phone: "",
 			alternativePhone: "",
 			address: "",
-			state: "",
+			province: "Corrientes",
 			city: "",
 		},
 		mode: "all",
 	});
 
-	const cpfMask = useMaskito({ options: { mask: cpf } });
+	const dniMask = useMaskito({ options: { mask: dni } });
 	const phoneMask = useMaskito({ options: { mask: phone } });
 	const altPhoneMask = useMaskito({ options: { mask: phone } });
 
@@ -65,7 +65,7 @@ export function NewClientForm({
 
 		const formattedData = {
 			...values,
-			cpf: unmask.cpf(values.cpf),
+			dni: unmask.dni(values.dni),
 			phone: unmask.phone(values.phone),
 			alternativePhone: values.alternativePhone
 				? unmask.phone(values.alternativePhone)
@@ -77,7 +77,7 @@ export function NewClientForm({
 				text: "Cliente cadastrado com sucesso!",
 			});
 
-			onCustomerCreated(formattedData.cpf);
+			onCustomerCreated(formattedData.dni);
 		} catch {
 			toast.error({
 				text: "Erro ao cadastrar cliente",
@@ -136,11 +136,12 @@ export function NewClientForm({
 						render={({ field }) => (
 							<FormItem>
 								<FormLabel>
-									<PhoneIcon className="inline-block size-3.5" /> Telefone
+									<PhoneIcon className="inline-block size-3.5" /> Phone
 								</FormLabel>
 								<FormControl>
 									<Input
-										placeholder="(00) 00000-0000"
+										inputMode="tel"
+										placeholder="3794123456"
 										{...field}
 										onInput={(e) =>
 											form.setValue("phone", e.currentTarget.value)
@@ -158,12 +159,12 @@ export function NewClientForm({
 						render={({ field }) => (
 							<FormItem>
 								<FormLabel>
-									<Smartphone className="inline-block size-3.5" /> Telefone
-									alternativo
+									<Smartphone className="inline-block size-3.5" /> Other phone
 								</FormLabel>
 								<FormControl>
 									<Input
-										placeholder="(00) 00000-0000"
+										inputMode="tel"
+										placeholder="3794123456"
 										{...field}
 										onInput={(e) =>
 											form.setValue("alternativePhone", e.currentTarget.value)
@@ -177,18 +178,19 @@ export function NewClientForm({
 					/>
 					<FormField
 						control={form.control}
-						name="cpf"
+						name="dni"
 						render={({ field }) => (
 							<FormItem>
 								<FormLabel>
-									<IdCard className="inline-block size-3.5" /> CPF
+									<IdCard className="inline-block size-3.5" /> DNI
 								</FormLabel>
 								<FormControl>
 									<Input
-										placeholder="000.000.000-00"
+										inputMode="numeric"
+										placeholder="30123456"
 										{...field}
-										onInput={(e) => form.setValue("cpf", e.currentTarget.value)}
-										ref={cpfMask}
+										onInput={(e) => form.setValue("dni", e.currentTarget.value)}
+										ref={dniMask}
 									/>
 								</FormControl>
 								<FormMessage />
@@ -212,14 +214,14 @@ export function NewClientForm({
 					/>
 					<FormField
 						control={form.control}
-						name="state"
+						name="province"
 						render={({ field }) => (
 							<FormItem>
 								<FormLabel>
-									<Building className="inline-block size-3.5" /> Estado
+									<Building className="inline-block size-3.5" /> Province
 								</FormLabel>
 								<FormControl>
-									<Input placeholder="UF" {...field} />
+									<Input placeholder="Corrientes" {...field} />
 								</FormControl>
 								<FormMessage />
 							</FormItem>

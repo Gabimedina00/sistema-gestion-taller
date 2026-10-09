@@ -19,7 +19,7 @@ export class AccountRepository {
 				email: users.email,
 				displayName: sql`COALESCE(${employees.name}, ${clients.name})`,
 				avatarUrl: users.avatarUrl,
-				cpf: sql`COALESCE(${employees.cpf}, ${clients.cpf})`,
+				dni: sql`COALESCE(${employees.dni}, ${clients.dni})`,
 				phone: sql`COALESCE(${employees.phone}, ${clients.phone})`,
 				profileType: sql`CASE
                       WHEN ${employees.id} IS NOT NULL THEN 'employee'

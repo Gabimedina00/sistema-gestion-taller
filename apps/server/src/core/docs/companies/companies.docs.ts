@@ -4,6 +4,7 @@ import {
 	getCompanyBySubdomainSchema as getCompanyBySubdomainParamsSchema,
 } from "@fixr/schemas/companies";
 import type { FastifySchema } from "fastify";
+import { z } from "zod";
 import { zodResponseSchema } from "../types";
 
 const getUserCompanySchema: FastifySchema = {
@@ -89,13 +90,38 @@ const createCompanySchemaDoc: FastifySchema = {
 			message: "You dont have the required permissions to perform this action",
 			data: null,
 		}).describe("User is not a platform admin."),
-		409: zodResponseSchema({
-			status: 409,
-			error: "Conflict",
-			code: "cpf_conflict",
-			message: "CPF is already registered.",
-			data: null,
-		}).describe("Conflict with existing data."),
+		409: z
+			.union([
+				zodResponseSchema({
+					status: 409,
+					error: "Conflict",
+					code: "dni_conflict",
+					message: "DNI is already registered.",
+					data: null,
+				}).describe("The owner's DNI is already registered."),
+				zodResponseSchema({
+					status: 409,
+					error: "Conflict",
+					code: "cuit_conflict",
+					message: "CUIT is already registered.",
+					data: null,
+				}).describe("A shop with this CUIT already exists."),
+				zodResponseSchema({
+					status: 409,
+					error: "Conflict",
+					code: "email_already_exists",
+					message: "Email is already used.",
+					data: null,
+				}).describe("The owner's email is already used."),
+				zodResponseSchema({
+					status: 409,
+					error: "Conflict",
+					code: "subdomain_taken",
+					message: "Subdomain is already taken.",
+					data: null,
+				}).describe("The subdomain is already taken."),
+			])
+			.describe("Conflict with existing data."),
 	},
 	security: [{ JWT: [] }],
 };
