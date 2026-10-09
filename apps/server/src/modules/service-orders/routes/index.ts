@@ -5,6 +5,7 @@ import {
 	createServiceOrderMockSchema,
 	getServiceOrdersQuerySchema,
 	serviceOrderParamsSchema,
+	updateServiceOrderSchema,
 	updateServiceOrderStatusSchema,
 } from "@fixr/schemas/service-orders";
 import type { z } from "zod";
@@ -58,6 +59,52 @@ export function serviceOrdersRoutes(fastify: FastifyTypedInstance) {
 				userJwt,
 				data: body,
 				subdomain,
+				response,
+			});
+		})
+	);
+
+	// Registered before "/:id" so "summary" isn't read as an order id
+	fastify.get(
+		"/summary",
+		{
+			preHandler: [
+				authenticateEmployee,
+				requirePermission(permissions.serviceOrders.read),
+			],
+			schema: serviceOrdersDocs.getStatusCountsSchema,
+		},
+		withErrorHandler(async (request, response) => {
+			const userJwt = request.user as z.infer<typeof userJWT>;
+			const { subdomain } = getCompanyNestedDataSchema.parse(request.params);
+
+			await ServiceOrdersController.getStatusCounts({
+				userJwt,
+				subdomain,
+				response,
+			});
+		})
+	);
+
+	fastify.patch(
+		"/:id",
+		{
+			preHandler: [
+				authenticateEmployee,
+				requirePermission(permissions.serviceOrders.update),
+			],
+			schema: serviceOrdersDocs.updateServiceOrderSchema,
+		},
+		withErrorHandler(async (request, response) => {
+			const userJwt = request.user as z.infer<typeof userJWT>;
+			const { subdomain, id } = serviceOrderParamsSchema.parse(request.params);
+			const data = await updateServiceOrderSchema.parseAsync(request.body);
+
+			await ServiceOrdersController.updateServiceOrder({
+				userJwt,
+				subdomain,
+				id,
+				data,
 				response,
 			});
 		})

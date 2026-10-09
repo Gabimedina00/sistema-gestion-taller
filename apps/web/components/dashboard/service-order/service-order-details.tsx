@@ -14,12 +14,14 @@ import {
 	Camera,
 	ClipboardList,
 	Loader2,
+	Printer,
 	Receipt,
 	User,
 	Watch,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
 	Select,
@@ -37,8 +39,10 @@ import {
 	updateServiceOrderStatus,
 } from "@/lib/services/service-orders";
 import { orderRef } from "@/lib/whatsapp";
+import { EditServiceOrderSheet } from "./edit-service-order-sheet";
 import { RepairStatusBadge } from "./repair-status-badge";
 import { ServiceOrderDetailsCard } from "./service-order-details-card";
+import { ServiceOrderReceipt } from "./service-order-receipt";
 import { WhatsappNoticeButton } from "./whatsapp-notice-button";
 import {
 	ServiceOrderKeyValueItem as Item,
@@ -121,8 +125,12 @@ export function ServiceOrderDetails({
 }
 
 function OrderView({ order, subdomain }: { order: Order; subdomain: string }) {
+	const { session } = useSession();
+	const ability = session?.company ? createAbility(session.company.role) : null;
+
 	return (
 		<div className="space-y-6">
+			<ServiceOrderReceipt order={order} shopName={session?.company?.name} />
 			<div className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between">
 				<div className="space-y-1">
 					<div className="flex items-center gap-2">
@@ -134,8 +142,16 @@ function OrderView({ order, subdomain }: { order: Order; subdomain: string }) {
 						{order.employee.name}
 					</p>
 				</div>
-				<div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-					<StatusSelect order={order} subdomain={subdomain} />
+				<div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+					{ability?.can(permissions.serviceOrders.changeStatus) && (
+						<StatusSelect order={order} subdomain={subdomain} />
+					)}
+					{ability?.can(permissions.serviceOrders.update) && (
+						<EditServiceOrderSheet order={order} subdomain={subdomain} />
+					)}
+					<Button onClick={() => window.print()} variant="outline">
+						<Printer className="size-4" /> Print receipt
+					</Button>
 					<WhatsappNoticeButton order={order} />
 				</div>
 			</div>
@@ -240,14 +256,7 @@ function StatusSelect({
 	order: Order;
 	subdomain: string;
 }) {
-	const { session } = useSession();
 	const queryClient = useQueryClient();
-
-	const canChangeStatus = session?.company
-		? createAbility(session.company.role).can(
-				permissions.serviceOrders.changeStatus
-			)
-		: false;
 
 	const change = useMutation({
 		mutationFn: async (status: ServiceOrderStatus) => {
@@ -283,10 +292,6 @@ function StatusSelect({
 			});
 		},
 	});
-
-	if (!canChangeStatus) {
-		return null;
-	}
 
 	return (
 		<Select

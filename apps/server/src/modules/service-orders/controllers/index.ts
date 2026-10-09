@@ -3,6 +3,7 @@ import type {
 	createServiceOrderMockSchema,
 	getServiceOrdersQuerySchema,
 	serviceOrderStatuses,
+	updateServiceOrderSchema,
 } from "@fixr/schemas/service-orders";
 import type { FastifyReply } from "fastify";
 import type { z } from "zod";
@@ -17,6 +18,24 @@ export class ServiceOrdersController {
 		response: FastifyReply;
 	}) {
 		return ServiceOrdersService.getServiceOrder(args);
+	}
+
+	static updateServiceOrder(args: {
+		userJwt: z.infer<typeof jwtPayload>;
+		subdomain: string;
+		id: string;
+		data: z.infer<typeof updateServiceOrderSchema>;
+		response: FastifyReply;
+	}) {
+		return ServiceOrdersService.updateServiceOrder(args);
+	}
+
+	static getStatusCounts(args: {
+		userJwt: z.infer<typeof jwtPayload>;
+		subdomain: string;
+		response: FastifyReply;
+	}) {
+		return ServiceOrdersService.getStatusCounts(args);
 	}
 
 	static updateServiceOrderStatus(args: {

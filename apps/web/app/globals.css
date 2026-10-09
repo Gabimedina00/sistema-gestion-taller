@@ -197,3 +197,26 @@
 		transform: scale(1.04);
 	}
 }
+
+/* Printing an order page prints only its intake receipt */
+@media print {
+	@page {
+		margin: 12mm;
+	}
+
+	body * {
+		visibility: hidden;
+	}
+
+	#print-receipt,
+	#print-receipt * {
+		visibility: visible;
+	}
+
+	#print-receipt {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+	}
+}

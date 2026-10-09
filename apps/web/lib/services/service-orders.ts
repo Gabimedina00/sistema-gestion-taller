@@ -4,6 +4,7 @@ import {
 	serviceOrderDetailsSchema,
 	serviceOrderListItemSchema,
 	type serviceOrderStatuses,
+	type updateServiceOrderSchema,
 } from "@fixr/schemas/service-orders";
 import type { uploadPresignResponseSchema } from "@fixr/schemas/uploads";
 import type { ApiResponse, PaginatedData } from "@fixr/schemas/utils";
@@ -128,6 +129,35 @@ export function updateServiceOrderStatus(
 		axios.patch<ApiResponse<{ id: string; status: ServiceOrderStatus }>>(
 			api(`/companies/${subdomain}/service-orders/${id}/status`),
 			{ status }
+		)
+	);
+}
+
+export type ServiceOrderUpdate = Omit<
+	z.input<typeof updateServiceOrderSchema>,
+	"estimatedDeliveryDate"
+> & {
+	/** YYYY-MM-DD */
+	estimatedDeliveryDate?: string | null;
+};
+
+export function updateServiceOrder(
+	subdomain: string,
+	id: string,
+	data: ServiceOrderUpdate
+) {
+	return request(
+		axios.patch<ApiResponse<{ id: string }>>(
+			api(`/companies/${subdomain}/service-orders/${id}`),
+			data
+		)
+	);
+}
+
+export function getStatusCounts(subdomain: string) {
+	return request(
+		axios.get<ApiResponse<Record<ServiceOrderStatus, number>>>(
+			api(`/companies/${subdomain}/service-orders/summary`)
 		)
 	);
 }

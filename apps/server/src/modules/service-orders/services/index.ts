@@ -1,10 +1,11 @@
 import { asc, db, desc, inArray } from "@fixr/db/connection";
 import { serviceOrders as serviceOrdersTable, uploads } from "@fixr/db/schema";
 import type { jwtPayload } from "@fixr/schemas/auth";
-import type {
-	createServiceOrderMockSchema,
-	getServiceOrdersQuerySchema,
+import {
+	type createServiceOrderMockSchema,
+	type getServiceOrdersQuerySchema,
 	serviceOrderStatuses,
+	type updateServiceOrderSchema,
 } from "@fixr/schemas/service-orders";
 import type { FastifyReply } from "fastify";
 import type { z } from "zod";
@@ -60,6 +61,72 @@ export class ServiceOrdersService {
 				code: "get_service_order_success",
 				message: "Service order retrieved successfully.",
 				data: order,
+			})
+		);
+	}
+
+	static async updateServiceOrder({
+		userJwt,
+		subdomain,
+		id,
+		data,
+		response,
+	}: {
+		userJwt: z.infer<typeof jwtPayload>;
+		subdomain: string;
+		id: string;
+		data: z.infer<typeof updateServiceOrderSchema>;
+		response: FastifyReply;
+	}) {
+		const companyId = assertCompanyAccess(userJwt, subdomain);
+
+		const order = await ServiceOrdersRepository.queryById(companyId, id);
+		if (!order) {
+			throw new AppError("SERVICE_ORDER_NOT_FOUND");
+		}
+
+		// Drizzle refuses an update with nothing to set
+		if (Object.values(data).some((value) => value !== undefined)) {
+			await ServiceOrdersRepository.updateDetails(id, data);
+		}
+
+		return response.status(200).send(
+			apiResponse({
+				status: 200,
+				error: null,
+				code: "update_service_order_success",
+				message: "Service order updated.",
+				data: { id },
+			})
+		);
+	}
+
+	static async getStatusCounts({
+		userJwt,
+		subdomain,
+		response,
+	}: {
+		userJwt: z.infer<typeof jwtPayload>;
+		subdomain: string;
+		response: FastifyReply;
+	}) {
+		const companyId = assertCompanyAccess(userJwt, subdomain);
+
+		const rows = await ServiceOrdersRepository.countByStatus(companyId);
+		const counts = Object.fromEntries(
+			serviceOrderStatuses.options.map((status) => [status, 0])
+		) as Record<z.infer<typeof serviceOrderStatuses>, number>;
+		for (const row of rows) {
+			counts[row.status] = Number(row.total);
+		}
+
+		return response.status(200).send(
+			apiResponse({
+				status: 200,
+				error: null,
+				code: "get_service_order_status_counts_success",
+				message: "Service order counts retrieved.",
+				data: counts,
 			})
 		);
 	}

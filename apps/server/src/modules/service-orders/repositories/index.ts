@@ -1,6 +1,7 @@
 import {
 	and,
 	asc,
+	count,
 	db,
 	eq,
 	gte,
@@ -23,6 +24,7 @@ import type {
 	createServiceOrderMockSchema,
 	getServiceOrdersQuerySchema,
 	serviceOrderStatuses,
+	updateServiceOrderSchema,
 } from "@fixr/schemas/service-orders";
 import type { z } from "zod";
 import { Cached, InvalidateCache } from "../../../shared/infra/cache";
@@ -227,6 +229,32 @@ export class ServiceOrdersRepository {
 			.update(serviceOrders)
 			.set({ status })
 			.where(eq(serviceOrders.id, id));
+	}
+
+	static async updateDetails(
+		id: string,
+		data: z.infer<typeof updateServiceOrderSchema>
+	) {
+		const { estimatedCost, ...rest } = data;
+		await db
+			.update(serviceOrders)
+			.set({
+				...rest,
+				// undefined leaves the cost as is, null clears it
+				estimatedCost:
+					estimatedCost === undefined
+						? undefined
+						: (estimatedCost?.toFixed(2) ?? null),
+			})
+			.where(eq(serviceOrders.id, id));
+	}
+
+	static async countByStatus(companyId: string) {
+		return await db
+			.select({ status: serviceOrders.status, total: count() })
+			.from(serviceOrders)
+			.where(eq(serviceOrders.companyId, companyId))
+			.groupBy(serviceOrders.status);
 	}
 
 	@InvalidateCache({ patterns: ["service-orders:*"] })
