@@ -8,9 +8,9 @@ export default function NewServiceOrderPage() {
 		<div className="space-y-6">
 			<BackButton className="-translate-x-3" />
 			<Heading
-				description="Preencha os campos abaixo para criar uma nova ordem de serviço."
+				description="Fill in the watch and customer details to open a repair order."
 				Icon={ClipboardPlus}
-				title="Criar nova ordem de serviço"
+				title="New watch repair order"
 			/>
 			<div>
 				<NewServiceOrderForm className="max-w-2xl" />

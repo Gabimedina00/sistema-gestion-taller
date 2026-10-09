@@ -1,4 +1,3 @@
-import { formattedIMEI } from "@fixr/schemas/common";
 import { z } from "zod";
 import { getPaginatedDataSchema } from "./utils";
 
@@ -12,47 +11,118 @@ export const serviceOrderStatuses = z.enum([
 	"delivered",
 ]);
 
-export const createServiceOrderPhotoSchema = z.object({
-	uploadId: z
-		.string({ error: "ID do upload é obrigatório." })
-		.min(1, { message: "ID do upload é obrigatório." }),
-	description: z
+// Keep these ids in sync with the labels in `@fixr/constants/watches`
+export const watchMovementTypes = z.enum([
+	"quartz",
+	"automatic",
+	"manual",
+	"smartwatch",
+]);
+export const watchServices = z.enum([
+	"battery",
+	"full_service",
+	"crystal",
+	"strap",
+	"crown_stem",
+	"water_test",
+	"gaskets",
+	"regulation",
+	"polishing",
+	"diagnosis",
+	"other",
+]);
+export const watchItemsReceived = z.enum([
+	"box",
+	"papers",
+	"original_strap",
+	"extra_links",
+	"pouch",
+]);
+
+/** @description Watch-specific fields shared by the API and the intake form */
+export const watchDetailsSchema = z.object({
+	referenceNumber: z
 		.string()
-		.max(255, { message: "Descrição excede 255 caracteres." })
+		.max(100, { message: "Reference number is too long (max 100)." })
+		.optional()
+		.nullable(),
+	serialNumber: z
+		.string()
+		.max(100, { message: "Serial number is too long (max 100)." })
+		.optional()
+		.nullable(),
+	movementType: watchMovementTypes.optional().nullable(),
+	caliber: z
+		.string()
+		.max(100, { message: "Caliber is too long (max 100)." })
+		.optional()
+		.nullable(),
+	requestedServices: z
+		.array(watchServices)
+		.min(1, { message: "Pick at least one service." }),
+	itemsReceived: z.array(watchItemsReceived).default([]),
+	intakeCondition: z
+		.string()
+		.max(65_535, { message: "Condition notes are too long." })
+		.optional()
+		.nullable(),
+	estimatedCost: z.coerce
+		.number({ message: "Estimated cost must be a number." })
+		.nonnegative({ message: "Estimated cost can't be negative." })
+		.optional()
+		.nullable(),
+	estimatedDeliveryDate: z.coerce
+		.date({ message: "Invalid delivery date." })
+		.optional()
+		.nullable(),
+	warrantyDays: z
+		.number()
+		.int({ message: "Warranty must be a whole number of days." })
+		.min(0, { message: "Warranty can't be negative." })
+		.max(3650, { message: "Warranty can't be longer than 10 years." })
 		.optional()
 		.nullable(),
 });
 
-export const createServiceOrderMockSchema = z.object({
-	clientId: z.string().cuid2({ message: "Cliente inválido." }),
-	deviceBrandId: z
+export const createServiceOrderPhotoSchema = z.object({
+	uploadId: z
+		.string({ error: "Upload ID is required." })
+		.min(1, { message: "Upload ID is required." }),
+	description: z
 		.string()
-		.cuid2({ message: "Marca do dispositivo inválida." }),
-	deviceCategoryId: z
-		.string()
-		.cuid2({ message: "Categoria do dispositivo inválida." }),
+		.max(255, { message: "Description is too long (max 255)." })
+		.optional()
+		.nullable(),
+});
+
+export const createServiceOrderMockSchema = watchDetailsSchema.extend({
+	clientId: z.string().cuid2({ message: "Invalid customer." }),
+	deviceBrandId: z.string().cuid2({ message: "Invalid brand." }),
+	deviceCategoryId: z.string().cuid2({ message: "Invalid device category." }),
 	deviceModel: z
-		.string({ error: "Modelo do dispositivo é obrigatório." })
-		.min(1, { message: "Modelo do dispositivo é obrigatório." })
-		.max(100, { message: "Modelo do dispositivo excede 100 caracteres." }),
+		.string({ error: "Model is required." })
+		.min(1, { message: "Model is required." })
+		.max(100, { message: "Model is too long (max 100)." }),
 	imei: z
 		.string()
-		.max(50, { message: "IMEI excede 50 caracteres." })
+		.max(50, { message: "IMEI is too long (max 50)." })
 		.optional()
 		.nullable(),
 	reportedDefect: z
-		.string({ error: "Defeito relatado é obrigatório." })
-		.min(1, { message: "Defeito relatado é obrigatório." })
-		.max(65_535, { message: "Defeito relatado excede o limite permitido." }),
+		.string({ error: "Reported issue is required." })
+		.min(1, { message: "Reported issue is required." })
+		.max(65_535, { message: "Reported issue is too long." }),
 	observations: z
 		.string()
-		.max(65_535, { message: "Observações excedem o limite permitido." })
+		.max(65_535, { message: "Notes are too long." })
 		.optional()
 		.nullable(),
 	photos: z
 		.array(createServiceOrderPhotoSchema)
-		.max(20, { message: "Máximo de 20 fotos por ordem de serviço." })
+		.max(20, { message: "Up to 20 photos per order." })
 		.default([]),
+	/** Optional in the API so phone repairs can still be created without it */
+	requestedServices: z.array(watchServices).default([]),
 });
 
 /** @deprecated Use createServiceOrderSchema */
@@ -62,15 +132,12 @@ export const getServiceOrdersQuerySchema = getPaginatedDataSchema
 	.extend({
 		deviceCategoryId: z
 			.string()
-			.cuid2({ message: "Categoria do dispositivo inválida." })
+			.cuid2({ message: "Invalid device category." })
 			.optional(),
-		employeeId: z
-			.string()
-			.cuid2({ message: "Responsável inválido." })
-			.optional(),
+		employeeId: z.string().cuid2({ message: "Invalid technician." }).optional(),
 		status: serviceOrderStatuses.optional(),
-		dateFrom: z.coerce.date({ message: "Data inicial inválida." }).optional(),
-		dateTo: z.coerce.date({ message: "Data final inválida." }).optional(),
+		dateFrom: z.coerce.date({ message: "Invalid start date." }).optional(),
+		dateTo: z.coerce.date({ message: "Invalid end date." }).optional(),
 	})
 	.refine(
 		(data) => {
@@ -80,24 +147,27 @@ export const getServiceOrdersQuerySchema = getPaginatedDataSchema
 			return true;
 		},
 		{
-			message: "A data inicial deve ser anterior ou igual à data final.",
+			message: "Start date must be on or before the end date.",
 			path: ["dateTo"],
 		}
 	);
 
-import { documentSchema } from "./documents";
-
-export const createOrderServiceSchema = z.object({
-	customerCPF: documentSchema("cpf").min(1, "O CPF é obrigatório"),
-	deviceIMEI: formattedIMEI.optional(),
-	description: z.string().min(1, "A descrição do problema é obrigatória"),
-	notes: z.string().optional(),
-	deviceId: z.string().min(1, "Selecione o modelo do aparelho"),
-	assigned_to: z
+/** @description Intake form for a watch repair order (web dashboard) */
+export const createOrderServiceSchema = watchDetailsSchema.extend({
+	customerDocument: z.string().min(1, "Customer ID (DNI) is required."),
+	brand: z
 		.string()
-		.min(1, "Selecione o funcionário responsável pela ordem de serviço"),
+		.min(1, "Brand is required.")
+		.max(100, "Brand is too long (max 100)."),
+	model: z
+		.string()
+		.min(1, "Model is required.")
+		.max(100, "Model is too long (max 100)."),
+	description: z.string().min(1, "Describe the problem the customer reports."),
+	notes: z.string().optional(),
+	assigned_to: z.string().optional(),
 	images: z
 		.array(z.instanceof(File))
-		.min(3, "Adicione pelo menos três fotos do aparelho")
-		.max(15, "Adicione no máximo quinze fotos do aparelho"),
+		.min(1, "Add at least one photo of the watch as received.")
+		.max(15, "Add up to 15 photos."),
 });
