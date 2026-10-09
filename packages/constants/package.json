@@ -37,6 +37,10 @@
     "./slug": {
       "types": "./src/slug.ts",
       "default": "./src/slug.ts"
+    },
+    "./watches": {
+      "types": "./src/watches.ts",
+      "default": "./src/watches.ts"
     }
   },
   "devDependencies": {

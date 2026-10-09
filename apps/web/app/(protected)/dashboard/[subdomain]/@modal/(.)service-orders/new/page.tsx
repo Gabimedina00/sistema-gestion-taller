@@ -5,9 +5,9 @@ import { ResponsiveDialogDrawer } from "@/components/ui/responsive-dialog-drawer
 export default function NewServiceOrderModal() {
 	return (
 		<ResponsiveDialogDrawer
-			description="Preencha os campos abaixo para criar uma nova ordem de serviço."
+			description="Fill in the watch and customer details to open a repair order."
 			icon={<ClipboardPlus />}
-			title="Criar nova ordem de serviço"
+			title="New watch repair order"
 		>
 			<NewServiceOrderForm />
 		</ResponsiveDialogDrawer>
